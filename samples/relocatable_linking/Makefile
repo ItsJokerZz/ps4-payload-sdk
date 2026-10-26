@@ -14,8 +14,8 @@
 # along with this program; see the file COPYING. If not see
 # <http://www.gnu.org/licenses/>.
 
-PS5_HOST ?= ps4
-PS5_PORT ?= 9021
+PS4_HOST ?= ps4
+PS4_PORT ?= 9021
 
 ifdef PS4_PAYLOAD_SDK
     include $(PS4_PAYLOAD_SDK)/toolchain/orbis.mk

@@ -279,6 +279,11 @@ pattern_match(const unsigned char* addr, unsigned int len, const char* hexstr) {
     }
   }
 
+  // the region ended before the pattern did
+  if(*hexstr) {
+    return -1;
+  }
+
   return 1;
 }
 

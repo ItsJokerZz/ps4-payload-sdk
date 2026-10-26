@@ -28,4 +28,4 @@ install:
 	cp -r ps4/. $(DESTDIR)/target/include/ps4
 
 	install -d $(DESTDIR)/target/user/homebrew/include
-	ln -sf user/homebrew/include $(DESTDIR)/target/include_common
+	ln -sfn user/homebrew/include $(DESTDIR)/target/include_common
