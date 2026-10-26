@@ -45,7 +45,7 @@ klog_label(char *buf, unsigned long size) {
 int
 klog_printf(const char *fmt, ...) {
   __builtin_va_list args;
-  char sargs[0x200];
+  char sargs[0x200] = {0};
   char buf[0x210];
   char lbl[32];
 
