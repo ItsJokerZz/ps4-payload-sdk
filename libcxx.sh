@@ -16,7 +16,7 @@
 # <http://www.gnu.org/licenses/>.
 
 LLVM_URL="https://github.com/llvm/llvm-project/releases/download"
-LLVM_VER="15.0.7"
+LLVM_VER="23.1.4"
 
 if [[ -z "$PS4_PAYLOAD_SDK" ]]; then
     echo "error: PS4_PAYLOAD_SDK is not set"
