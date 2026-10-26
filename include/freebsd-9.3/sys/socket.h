@@ -611,6 +611,14 @@ struct sf_hdtr {
 #define	SF_NODISKIO     0x00000001
 #define	SF_MNOWAIT	0x00000002
 #define	SF_SYNC		0x00000004
+
+/*
+ * Sendmmsg/recvmmsg specific structure(s)
+ */
+struct mmsghdr {
+	struct msghdr	msg_hdr;		/* message header */
+	ssize_t		msg_len;		/* message length */
+};
 #endif
 
 #ifndef	_KERNEL
@@ -634,6 +642,7 @@ ssize_t	sendto(int, const void *,
 ssize_t	sendmsg(int, const struct msghdr *, int);
 #if __BSD_VISIBLE
 int	sendfile(int, int, off_t, size_t, struct sf_hdtr *, off_t *, int);
+ssize_t	sendmmsg(int, struct mmsghdr * __restrict, size_t, int);
 int	setfib(int);
 #endif
 int	setsockopt(int, int, int, const void *, socklen_t);
