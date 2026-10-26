@@ -31,6 +31,7 @@ TOOLS := bin/orbis-cmake \
          bin/orbis-ld \
          bin/orbis-pkg-config \
          bin/orbis-nid \
+         bin/orbis-fetchpkg \
          bin/orbis-cross-fix-root
 
 LDSCRIPTS := elf_x86_64.x
