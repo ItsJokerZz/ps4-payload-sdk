@@ -7,5 +7,6 @@
 *.sprx
 *.pyc
 aerolib.csv
+nid_db.xml
 .gdb_history
 
