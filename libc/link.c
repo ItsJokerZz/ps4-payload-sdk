@@ -49,13 +49,13 @@ link(const char *oldpath, const char *newpath) {
 
 ssize_t
 readlink(const char *pathname, char *buf, size_t bufsize) {
-  int err;
+  int n;
 
-  if((err=syscall(SYS_readlink, pathname, buf, bufsize))) {
-    errno = -err;
+  if((n=syscall(SYS_readlink, pathname, buf, bufsize)) < 0) {
+    errno = -n;
     return -1;
   }
 
-  return 0;
+  return n;
 }
   

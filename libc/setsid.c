@@ -21,11 +21,12 @@ along with this program; see the file COPYING. If not, see
 
 pid_t
 setsid(void) {
-  int err;
-  
-  if((err=syscall(SYS_setsid))) {
-    errno = -err;
+  int sid;
+
+  if((sid=syscall(SYS_setsid)) < 0) {
+    errno = -sid;
+    return -1;
   }
 
-  return 0;
+  return sid;
 }
