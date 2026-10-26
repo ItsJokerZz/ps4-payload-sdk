@@ -28,13 +28,16 @@ int
 ptrace(int request, pid_t pid, caddr_t addr, int data) {
   uint64_t authid = kernel_get_ucred_authid(-1);
   pid_t my_pid = getpid();
-  int err = 0;
+  int ret;
 
   kernel_set_ucred_authid(my_pid, SCE_AUTHID_SYSCORE);
-  if((err=syscall(SYS_ptrace, request, pid, addr, data))) {
-    errno = -err;
-  }
+  ret = syscall(SYS_ptrace, request, pid, addr, data);
   kernel_set_ucred_authid(my_pid, authid);
-  
-  return err ? -1 : 0;
+
+  if(ret < 0) {
+    errno = -ret;
+    return -1;
+  }
+
+  return ret;
 }
