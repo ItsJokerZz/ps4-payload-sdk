@@ -63,7 +63,7 @@ build stubs for them as follows:
 john@localhost:ps4-payload-dev/sdk$ sudo apt-get install wget python3 python3-pyelftools
 john@localhost:ps4-payload-dev/sdk$ ln -s /path/to/sprx/libSceXYZ.sprx sce_stubs/libSceXYZ.sprx
 john@localhost:ps4-payload-dev/sdk$ make -C sce_stubs stubs
-john@localhost:ps4-payload-dev/sdk$ make DESTDIR=/opt/ps4-payload-sdk install
+john@localhost:ps4-payload-dev/sdk$ sudo make DESTDIR=/opt/ps4-payload-sdk install
 ```
 
 ## Working firmwares
@@ -118,7 +118,7 @@ please file an issue before you start to work on you changes. This will allow us
 to discuss the solution properly before you commit time and effort.
 
 ## License
-Files in the folder include/freebsd-9.0 are licenced under BSD licences.
+Files in the folder include/freebsd-9.3 are licenced under BSD licences.
 Unless otherwhise explicitly stated inside a file, the rest are licensed under
 the GPLv3+.
 
