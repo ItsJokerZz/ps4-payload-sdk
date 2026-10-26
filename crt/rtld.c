@@ -207,6 +207,8 @@ sprx_dlsym(const char* symname) {
 static unsigned int
 sprx_open(const char* libname) {
   char path[1024];
+  int handle;
+  int error;
 
   if(!strcmp(libname, "libkernel.sprx") ||
      !strcmp(libname, "libkernel_web.sprx") ||
@@ -219,18 +221,25 @@ sprx_open(const char* libname) {
   }
 
   if(sprx_find_file(libname, path)) {
+    klog_printf("%s: not found in the system library directories\n", libname);
     return 0;
   }
 
   for(int i=0; i<sizeof(sysmodtab)/sizeof(sysmodtab[0]); i++) {
     if(!strcmp(libname, sysmodtab[i].name)) {
-      if(sceSysmoduleLoadModuleInternal(sysmodtab[i].handle)) {
+      if((error=sceSysmoduleLoadModuleInternal(sysmodtab[i].handle))) {
+	klog_printf("%s: sceSysmoduleLoadModuleInternal(0x%x) failed: 0x%x\n",
+		    libname, sysmodtab[i].handle, error);
 	return 0;
       }
     }
   }
 
-  return sceKernelLoadStartModule(path, 0, 0, 0, 0, 0);
+  if((handle=sceKernelLoadStartModule(path, 0, 0, 0, 0, 0)) < 0) {
+    klog_printf("%s: sceKernelLoadStartModule failed: 0x%x\n", libname, handle);
+  }
+
+  return handle;
 }
 
 

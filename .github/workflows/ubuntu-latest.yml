@@ -44,14 +44,20 @@ jobs:
     - name: Build samples
       run: |
         source $PS4_PAYLOAD_SDK/toolchain/orbis.sh
+        $MAKE -C samples/arbitrary_syscall
         $MAKE -C samples/browser
+        $MAKE -C samples/hello_argv
         $MAKE -C samples/hello_cxx
         $MAKE -C samples/hello_dlfcn
         $MAKE -C samples/hello_sprx
         $MAKE -C samples/hello_stdio
         $MAKE -C samples/hello_world
+        $MAKE -C samples/http_get
+        $MAKE -C samples/hwinfo
         $MAKE -C samples/kdump
+        $MAKE -C samples/list_files
         $MAKE -C samples/mntinfo
+        $MAKE -C samples/notify_debug
         $MAKE -C samples/ps
       env:
           PS4_PAYLOAD_SDK: ${{ runner.tool_cache }}/ps4-payload-sdk

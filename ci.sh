@@ -25,12 +25,19 @@ make clean install || exit 1
 export PS4_PAYLOAD_SDK=$DESTDIR
 $SCRIPTDIR/libcxx.sh || exit 1
 
-MAKE_SAMPLES=("browser"
+MAKE_SAMPLES=("arbitrary_syscall"
+	      "browser"
+	      "hello_argv"
 	      "hello_cxx"
 	      "hello_dlfcn"
 	      "hello_sprx"
 	      "hello_stdio"
 	      "hello_world"
+	      "http_get"
+	      "hwinfo"
+	      "list_files"
+	      "mntinfo"
+	      "notify_debug"
 	      "kdump"
 	      "ps"
 	      "relocatable_linking")

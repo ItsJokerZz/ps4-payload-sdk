@@ -17,11 +17,15 @@
 # <http://www.gnu.org/licenses/>.
 
 import argparse
+import logging
 import os
 import string
 import struct
 
 from elftools.elf.elffile import ELFFile
+
+
+logger = logging.getLogger('genstub')
 
 
 tmpl_func = string.Template('''
@@ -107,11 +111,16 @@ def symbols(sym_type, filename):
             symname = f.read(14).decode('ascii')
             nid, lid, mid = symname.split('#')
 
-            if nid in nid_map:
-                yield nid_map[nid]
+            if not nid in nid_map:
+                logger.warning(f'skipping unknown NID {nid}')
+                continue
+
+            yield nid_map[nid]
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.WARNING)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('SPRX_FILE')
     cli_args = parser.parse_args()

@@ -86,6 +86,26 @@ extern const intptr_t KERNEL_ADDRESS_ROOTVNODE;
 extern const intptr_t KERNEL_ADDRESS_TARGETID;
 extern const intptr_t KERNEL_ADDRESS_QA_FLAGS;
 
+// struct proc field offsets
+extern const off_t KERNEL_OFFSET_PROC_P_UCRED;
+extern const off_t KERNEL_OFFSET_PROC_P_FD;
+extern const off_t KERNEL_OFFSET_PROC_P_PID;
+extern const off_t KERNEL_OFFSET_PROC_P_VMSPACE;
+
+// struct ucred field offsets
+extern const off_t KERNEL_OFFSET_UCRED_CR_UID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_RUID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SVUID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_RGID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SVGID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SCEAUTHID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SCECAPS;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SCEATTRS;
+
+// struct filedesc field offsets
+extern const off_t KERNEL_OFFSET_FILEDESC_FD_RDIR;
+extern const off_t KERNEL_OFFSET_FILEDESC_FD_JDIR;
+
 uint32_t kernel_get_fw_version(void);
 
 int32_t  kernel_copyin(const void *udaddr, intptr_t kaddr, size_t len);
@@ -108,6 +128,10 @@ int kernel_patch(intptr_t addr, const void* before, const void* after,
 intptr_t kernel_get_proc(pid_t pid);
 intptr_t kernel_get_proc_ucred(pid_t pid);
 intptr_t kernel_get_proc_filedesc(pid_t pid);
+
+int kernel_get_vmem_protection(pid_t pid, intptr_t addr, size_t len);
+int kernel_set_vmem_protection(pid_t pid, intptr_t addr, size_t len, int prot);
+int kernel_mprotect(pid_t pid, intptr_t addr, size_t size, int prot);
 
 int      kernel_dynlib_obj(pid_t pid, uint32_t handle, dynlib_obj_t* obj);
 int      kernel_dynlib_handle(pid_t pid, const char* basename, uint32_t *handle);
@@ -136,6 +160,8 @@ int32_t kernel_set_ucred_caps(pid_t pid, const uint8_t caps[16]);
 
 uint64_t kernel_get_ucred_attrs(pid_t pid);
 int32_t  kernel_set_ucred_attrs(pid_t pid, uint64_t attr);
+
+intptr_t kernel_get_root_vnode(void);
 
 intptr_t kernel_get_proc_rootdir(pid_t pid);
 int32_t  kernel_set_proc_rootdir(pid_t pid, intptr_t vnode);
