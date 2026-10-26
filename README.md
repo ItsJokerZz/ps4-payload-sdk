@@ -112,7 +112,7 @@ please file an issue before you start to work on you changes. This will allow us
 to discuss the solution properly before you commit time and effort.
 
 ## License
-Files in the folder include/freebsd-9.0 are licenced under BSD licences.
+Files in the folder include/freebsd-9.3 are licenced under BSD licences.
 Unless otherwhise explicitly stated inside a file, the rest are licensed under
 the GPLv3+.
 
