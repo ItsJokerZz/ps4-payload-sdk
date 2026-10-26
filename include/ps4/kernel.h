@@ -129,6 +129,10 @@ intptr_t kernel_get_proc(pid_t pid);
 intptr_t kernel_get_proc_ucred(pid_t pid);
 intptr_t kernel_get_proc_filedesc(pid_t pid);
 
+int kernel_get_vmem_protection(pid_t pid, intptr_t addr, size_t len);
+int kernel_set_vmem_protection(pid_t pid, intptr_t addr, size_t len, int prot);
+int kernel_mprotect(pid_t pid, intptr_t addr, size_t size, int prot);
+
 int      kernel_dynlib_obj(pid_t pid, uint32_t handle, dynlib_obj_t* obj);
 int      kernel_dynlib_handle(pid_t pid, const char* basename, uint32_t *handle);
 intptr_t kernel_dynlib_dlsym(pid_t pid, uint32_t handle, const char *sym);
