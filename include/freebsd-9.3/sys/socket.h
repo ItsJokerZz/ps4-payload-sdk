@@ -459,6 +459,7 @@ struct msghdr {
 #endif
 #if __BSD_VISIBLE
 #define	MSG_NOSIGNAL	0x20000		/* do not generate SIGPIPE on EOF */
+#define	MSG_WAITFORONE	0x80000		/* for recvmmsg() */
 #endif
 
 /*
@@ -636,6 +637,11 @@ int	listen(int, int);
 ssize_t	recv(int, void *, size_t, int);
 ssize_t	recvfrom(int, void *, size_t, int, struct sockaddr * __restrict, socklen_t * __restrict);
 ssize_t	recvmsg(int, struct msghdr *, int);
+#if __BSD_VISIBLE
+struct timespec;
+ssize_t	recvmmsg(int, struct mmsghdr * __restrict, size_t, int,
+    const struct timespec * __restrict);
+#endif
 ssize_t	send(int, const void *, size_t, int);
 ssize_t	sendto(int, const void *,
 	    size_t, int, const struct sockaddr *, socklen_t);
