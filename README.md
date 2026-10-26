@@ -47,7 +47,7 @@ john@localhost:ps4-payload-dev/sdk$ make -C samples/hello_stdio test
 
 ## Building the SDK
 ```console
-john@localhost:ps4-payload-dev/sdk$ make DESTDIR=/opt/ps4-payload-sdk install
+john@localhost:ps4-payload-dev/sdk$ sudo make DESTDIR=/opt/ps4-payload-sdk install
 ```
 
 ## Adding new SCE Libs
@@ -57,7 +57,7 @@ build stubs for them as follows:
 john@localhost:ps4-payload-dev/sdk$ sudo apt-get install wget python3 python3-pyelftools
 john@localhost:ps4-payload-dev/sdk$ ln -s /path/to/sprx/libSceXYZ.sprx sce_stubs/libSceXYZ.sprx
 john@localhost:ps4-payload-dev/sdk$ make -C sce_stubs stubs
-john@localhost:ps4-payload-dev/sdk$ make DESTDIR=/opt/ps4-payload-sdk install
+john@localhost:ps4-payload-dev/sdk$ sudo make DESTDIR=/opt/ps4-payload-sdk install
 ```
 
 ## Working firmwares
