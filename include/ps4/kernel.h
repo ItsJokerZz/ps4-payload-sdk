@@ -161,6 +161,8 @@ int32_t kernel_set_ucred_caps(pid_t pid, const uint8_t caps[16]);
 uint64_t kernel_get_ucred_attrs(pid_t pid);
 int32_t  kernel_set_ucred_attrs(pid_t pid, uint64_t attr);
 
+intptr_t kernel_get_root_vnode(void);
+
 intptr_t kernel_get_proc_rootdir(pid_t pid);
 int32_t  kernel_set_proc_rootdir(pid_t pid, intptr_t vnode);
 

@@ -1766,6 +1766,12 @@ kernel_set_ucred_svgid(int pid, unsigned int svgid) {
 }
 
 unsigned long
+kernel_get_root_vnode(void) {
+  return KERNEL_ADDRESS_ROOTVNODE;
+}
+
+
+unsigned long
 kernel_get_proc_rootdir(int pid) {
   unsigned long filedesc = 0;
   unsigned long vnode = 0;
