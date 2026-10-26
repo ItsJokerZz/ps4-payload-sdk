@@ -94,6 +94,16 @@ gai_strerror(int err) {
 }
 
 
+const char*
+hstrerror(int herr) {
+  static char buf[50];
+
+  sprintf(buf, "Unknown network error code 0x%08x", herr);
+
+  return buf;
+}
+
+
 int*
 __h_errno(void) {
   return sceNetErrnoLoc();
