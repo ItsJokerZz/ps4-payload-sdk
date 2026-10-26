@@ -317,6 +317,7 @@ void	 funlockfile(FILE *);
  * requires functions as well.
  */
 int	 getc_unlocked(FILE *);
+int	 fflush_unlocked(FILE *);
 int	 getchar_unlocked(void);
 int	 putc_unlocked(int, FILE *);
 int	 putchar_unlocked(int);
