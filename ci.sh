@@ -33,6 +33,7 @@ MAKE_SAMPLES=("arbitrary_syscall"
 	      "hello_sprx"
 	      "hello_stdio"
 	      "hello_world"
+	      "hwinfo"
 	      "kdump"
 	      "ps"
 	      "relocatable_linking")
