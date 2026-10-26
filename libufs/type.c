@@ -58,6 +58,7 @@ ufs_disk_close(struct uufsd *disk)
 {
 	ERROR(disk, NULL);
 	close(disk->d_fd);
+	disk->d_fd = -1;
 	if (disk->d_inoblock != NULL) {
 		free(disk->d_inoblock);
 		disk->d_inoblock = NULL;
