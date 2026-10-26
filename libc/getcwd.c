@@ -24,7 +24,7 @@ char*
 getcwd(char* buf, size_t size) {
   int err;
 
-  if((err=syscall(SYS___getcwd, buf, sizeof(buf)))) {
+  if((err=syscall(SYS___getcwd, buf, size))) {
     errno = -err;
     return 0;
   }
