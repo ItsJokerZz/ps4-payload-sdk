@@ -1682,6 +1682,96 @@ kernel_set_ucred_attrs(int pid, unsigned long attrs) {
 
 
 int
+kernel_get_ucred_uid(int pid) {
+  unsigned long ucred = 0;
+  int uid = -1;
+
+  if(!(ucred=kernel_get_proc_ucred(pid))) {
+    return -1;
+  }
+
+  if(kernel_copyout(ucred + KERNEL_OFFSET_UCRED_CR_UID, &uid,
+		    sizeof(uid))) {
+    return -1;
+  }
+
+  return uid;
+}
+
+
+int
+kernel_get_ucred_ruid(int pid) {
+  unsigned long ucred = 0;
+  int ruid = -1;
+
+  if(!(ucred=kernel_get_proc_ucred(pid))) {
+    return -1;
+  }
+
+  if(kernel_copyout(ucred + KERNEL_OFFSET_UCRED_CR_RUID, &ruid,
+		    sizeof(ruid))) {
+    return -1;
+  }
+
+  return ruid;
+}
+
+
+int
+kernel_get_ucred_svuid(int pid) {
+  unsigned long ucred = 0;
+  int svuid = -1;
+
+  if(!(ucred=kernel_get_proc_ucred(pid))) {
+    return -1;
+  }
+
+  if(kernel_copyout(ucred + KERNEL_OFFSET_UCRED_CR_SVUID, &svuid,
+		    sizeof(svuid))) {
+    return -1;
+  }
+
+  return svuid;
+}
+
+
+int
+kernel_get_ucred_rgid(int pid) {
+  unsigned long ucred = 0;
+  int rgid = -1;
+
+  if(!(ucred=kernel_get_proc_ucred(pid))) {
+    return -1;
+  }
+
+  if(kernel_copyout(ucred + KERNEL_OFFSET_UCRED_CR_RGID, &rgid,
+		    sizeof(rgid))) {
+    return -1;
+  }
+
+  return rgid;
+}
+
+
+int
+kernel_get_ucred_svgid(int pid) {
+  unsigned long ucred = 0;
+  int svgid = -1;
+
+  if(!(ucred=kernel_get_proc_ucred(pid))) {
+    return -1;
+  }
+
+  if(kernel_copyout(ucred + KERNEL_OFFSET_UCRED_CR_SVGID, &svgid,
+		    sizeof(svgid))) {
+    return -1;
+  }
+
+  return svgid;
+}
+
+
+int
 kernel_set_ucred_uid(int pid, unsigned int uid) {
   unsigned long ucred = 0;
 
