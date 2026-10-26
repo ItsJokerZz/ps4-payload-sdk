@@ -33,6 +33,8 @@ export PS4_CROSS_FIX_ROOT=${PS4_PAYLOAD_SDK}/bin/orbis-cross-fix-root
 export AS=${PS4_PAYLOAD_SDK}/bin/orbis-as
 export CC=${PS4_PAYLOAD_SDK}/bin/orbis-clang
 export CXX=${PS4_PAYLOAD_SDK}/bin/orbis-clang++
+export OBJC=${PS4_PAYLOAD_SDK}/bin/orbis-clang
+export OBJCXX=${PS4_PAYLOAD_SDK}/bin/orbis-clang++
 export LD=${PS4_PAYLOAD_SDK}/bin/orbis-ld
 
 export AR=${PS4_PAYLOAD_SDK}/bin/orbis-ar
