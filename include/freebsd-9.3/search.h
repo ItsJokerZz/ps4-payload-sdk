@@ -34,15 +34,18 @@ typedef	enum {
 } VISIT;
 
 #ifdef _SEARCH_PRIVATE
-typedef	struct node {
-	char         *key;
-	struct node  *llink, *rlink;
-} node_t;
+typedef struct __posix_tnode {
+	void			*key;
+	struct __posix_tnode	*llink, *rlink;
+	signed char		 balance;
+} posix_tnode;
 
 struct que_elem {
 	struct que_elem *next;
 	struct que_elem *prev;
 };
+#else
+typedef void posix_tnode;
 #endif
 
 __BEGIN_DECLS
@@ -55,12 +58,15 @@ void	*lfind(const void *, const void *, size_t *, size_t,
 void	*lsearch(const void *, void *, size_t *, size_t,
 	    int (*)(const void *, const void *));
 void	 remque(void *);
-void	*tdelete(const void * __restrict, void ** __restrict,
+void	*tdelete(const void * __restrict, posix_tnode ** __restrict,
 	    int (*)(const void *, const void *));
-void	*tfind(const void *, void * const *,
+posix_tnode *
+	 tfind(const void *, posix_tnode * const *,
 	    int (*)(const void *, const void *));
-void	*tsearch(const void *, void **, int (*)(const void *, const void *));
-void	 twalk(const void *, void (*)(const void *, VISIT, int));
+posix_tnode *
+	 tsearch(const void *, posix_tnode **,
+	    int (*)(const void *, const void *));
+void	 twalk(const posix_tnode *, void (*)(const posix_tnode *, VISIT, int));
 __END_DECLS
 
 #endif /* !_SEARCH_H_ */
