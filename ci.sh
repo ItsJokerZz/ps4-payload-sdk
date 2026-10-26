@@ -25,7 +25,8 @@ make clean install || exit 1
 export PS4_PAYLOAD_SDK=$DESTDIR
 $SCRIPTDIR/libcxx.sh || exit 1
 
-MAKE_SAMPLES=("browser"
+MAKE_SAMPLES=("arbitrary_syscall"
+	      "browser"
 	      "hello_cxx"
 	      "hello_dlfcn"
 	      "hello_sprx"
