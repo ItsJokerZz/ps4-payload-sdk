@@ -14,8 +14,7 @@
 # along with this program; see the file COPYING. If not see
 # <http://www.gnu.org/licenses/>.
 
-MAKE    ?= make
-DESTDIR ?= /opt/ps4-payload-sdk
+include Makefile.inc
 
 TOPTARGETS := all clean install
 SUBDIRS    := crt include libc libufs sce_stubs host
