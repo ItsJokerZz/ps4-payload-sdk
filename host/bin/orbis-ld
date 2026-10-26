@@ -18,8 +18,8 @@
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_DIR="$(dirname "${SCRIPT_PATH}")"
 
-PS5_PAYLOAD_SDK="$(realpath "${SCRIPT_DIR}/..")"
-PS5_PAYLOAD_HBROOT="${PS5_PAYLOAD_SDK}/target/user/homebrew"
+PS4_PAYLOAD_SDK="$(realpath "${SCRIPT_DIR}/..")"
+PS4_PAYLOAD_HBROOT="${PS4_PAYLOAD_SDK}/target/user/homebrew"
 
 PIE="-pie"
 LDSCRIPT="-T${PS4_PAYLOAD_SDK}/ldscripts/elf_x86_64.x"
