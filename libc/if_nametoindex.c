@@ -70,6 +70,7 @@ if_nametoindex(const char *ifname)
 
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s != -1) {
+		memset(&ifr, 0, sizeof(ifr));
 		strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 		if (_ioctl(s, SIOCGIFINDEX, &ifr) != -1) {
 			_close(s);
