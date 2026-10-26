@@ -9,21 +9,25 @@ On Debian-flavored operating systems, you can invoke the following command to
 install dependencies used by the SDK.
 ```console
 john@localhost:ps4-payload-dev/sdk$ sudo apt-get update && sudo apt-get upgrade # optional
-john@localhost:ps4-payload-dev/sdk$ sudo apt-get install bash clang-18 lld-18 # required
-john@localhost:ps4-payload-dev/sdk$ sudo apt-get install socat cmake meson pkg-config # optional
+john@localhost:ps4-payload-dev/sdk$ sudo apt-get install bash wget # required
+john@localhost:ps4-payload-dev/sdk$ wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 23 # required
+john@localhost:ps4-payload-dev/sdk$ sudo apt-get install llvm-23 llvm-23-dev lld-23 # required
+john@localhost:ps4-payload-dev/sdk$ sudo apt-get install socat cmake meson pkg-config python3 python3-pyelftools # optional
 ```
+The SDK itself builds with LLVM 15 or newer. The libc++ step in [Building the SDK](#building-the-sdk)
+builds LLVM 23, and libc++ 23 needs a host compiler that is Clang 21 or newer.
 
 If you are using Fedora, you can install dependencies as follows (tested with version 41):
 ```console
-john@localhost:ps4-payload-dev/sdk$ sudo dnf install bash llvm-devel clang lld # required
-john@localhost:ps4-payload-dev/sdk$ sudo dnf install socat cmake meson pkg-config # optional
+john@localhost:ps4-payload-dev/sdk$ sudo dnf install bash llvm-devel clang lld wget # required
+john@localhost:ps4-payload-dev/sdk$ sudo dnf install socat cmake meson pkg-config python3 python3-pyelftools # optional
 ```
 
 If you are using macOS, you can install them using the [Homebrew Package Manager][macos-brew] (tested with macOS Sequoia):
 ```console
-john@localhost:ps4-payload-dev/sdk$ brew install llvm@18 # required
-john@localhost:ps4-payload-dev/sdk$ export LLVM_CONFIG=/opt/homebrew/opt/llvm@18/bin/llvm-config # required
-john@localhost:ps4-payload-dev/sdk$ brew install socat cmake meson # optional
+john@localhost:ps4-payload-dev/sdk$ brew install llvm lld wget # required
+john@localhost:ps4-payload-dev/sdk$ export LLVM_CONFIG=/opt/homebrew/opt/llvm/bin/llvm-config # required
+john@localhost:ps4-payload-dev/sdk$ brew install socat cmake meson python && pip3 install pyelftools # optional
 ```
 
 ## Quick-start
@@ -47,7 +51,9 @@ john@localhost:ps4-payload-dev/sdk$ make -C samples/hello_stdio test
 
 ## Building the SDK
 ```console
-john@localhost:ps4-payload-dev/sdk$ make DESTDIR=/opt/ps4-payload-sdk install
+john@localhost:ps4-payload-dev/sdk$ sudo make DESTDIR=/opt/ps4-payload-sdk install
+john@localhost:ps4-payload-dev/sdk$ export PS4_PAYLOAD_SDK=/opt/ps4-payload-sdk
+john@localhost:ps4-payload-dev/sdk$ sudo -E ./libcxx.sh # fetch, build, and install libcxx
 ```
 
 ## Adding new SCE Libs
