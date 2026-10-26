@@ -86,6 +86,26 @@ extern const intptr_t KERNEL_ADDRESS_ROOTVNODE;
 extern const intptr_t KERNEL_ADDRESS_TARGETID;
 extern const intptr_t KERNEL_ADDRESS_QA_FLAGS;
 
+// struct proc field offsets
+extern const off_t KERNEL_OFFSET_PROC_P_UCRED;
+extern const off_t KERNEL_OFFSET_PROC_P_FD;
+extern const off_t KERNEL_OFFSET_PROC_P_PID;
+extern const off_t KERNEL_OFFSET_PROC_P_VMSPACE;
+
+// struct ucred field offsets
+extern const off_t KERNEL_OFFSET_UCRED_CR_UID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_RUID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SVUID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_RGID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SVGID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SCEAUTHID;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SCECAPS;
+extern const off_t KERNEL_OFFSET_UCRED_CR_SCEATTRS;
+
+// struct filedesc field offsets
+extern const off_t KERNEL_OFFSET_FILEDESC_FD_RDIR;
+extern const off_t KERNEL_OFFSET_FILEDESC_FD_JDIR;
+
 uint32_t kernel_get_fw_version(void);
 
 int32_t  kernel_copyin(const void *udaddr, intptr_t kaddr, size_t len);
