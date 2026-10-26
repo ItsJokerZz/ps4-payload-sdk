@@ -35,6 +35,7 @@ MAKE_SAMPLES=("arbitrary_syscall"
 	      "hello_world"
 	      "hwinfo"
 	      "list_files"
+	      "notify_debug"
 	      "kdump"
 	      "ps"
 	      "relocatable_linking")
