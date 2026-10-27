@@ -25,6 +25,7 @@ clean:
 install:
 	install -d $(DESTDIR)/target/include
 	cp -r freebsd-9.3/. $(DESTDIR)/target/include
+	cp -r khronos/. $(DESTDIR)/target/include
 	cp -r ps4/. $(DESTDIR)/target/include/ps4
 
 	install -d $(DESTDIR)/target/user/homebrew/include
