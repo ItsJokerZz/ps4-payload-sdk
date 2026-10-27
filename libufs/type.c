@@ -119,7 +119,7 @@ again:	if ((ret = stat(name, &st)) < 0) {
 	} else if (ret >= 0 && S_ISCHR(st.st_mode)) {
 		/* This is what we need, do nothing. */
 		;
-	} else if (0/*(fs = getfsfile(name)) != NULL*/) {
+	} else if (0 /*(fs = getfsfile(name)) != NULL */) {
 		/*
 		 * The given mount point is listed in /etc/fstab.
 		 * It is possible that someone unmounted file system by hand
