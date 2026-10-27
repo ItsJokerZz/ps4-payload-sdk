@@ -36,40 +36,17 @@ along with this program; see the file COPYING. If not, see
 #define SYS_dynlib_unload 595
 #define SYS_randomized_path 602
 
-#define DYNLIB_LOAD(name, handle) __syscall(SYS_dynlib_load, name, 0, handle, 0)
-#define DYNLIB_DLSYM(handle, name, addr) __syscall(SYS_dynlib_dlsym, handle, name, addr)
-
-
-static inline long
-__syscall(long n, ...) {
-  long a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0;
-  __builtin_va_list ap;
-  unsigned long ret;
-  char err;
-
-  __builtin_va_start(ap, n);
-  a1 = __builtin_va_arg(ap, long);
-  a2 = __builtin_va_arg(ap, long);
-  a3 = __builtin_va_arg(ap, long);
-  a4 = __builtin_va_arg(ap, long);
-  a5 = __builtin_va_arg(ap, long);
-  a6 = __builtin_va_arg(ap, long);
-  __builtin_va_end(ap);
-
-  register long r10 asm("r10") = a4;
-  register long r8  asm("r8")  = a5;
-  register long r9  asm("r9")  = a6;
-
-  asm("syscall"
-      : "=a"(ret), "=@ccc"(err), "+r"(r10), "+r"(r8), "+r"(r9)
-      : "a"(n), "D"(a1), "S"(a2), "d"(a3)
-      : "rcx", "r11", "memory");
-
-  return err ? -ret : ret;
-}
+#define DYNLIB_LOAD(name, handle) __crt_syscall(SYS_dynlib_load, name, 0, handle, 0)
+#define DYNLIB_DLSYM(handle, name, addr) __crt_syscall(SYS_dynlib_dlsym, handle, name, addr)
 
 
 /**
- * Same name as the syscall function in the PS5 crt, for the files shared with it.
+ * Make a syscall.
  **/
-#define __crt_syscall __syscall
+long __crt_syscall(long sysno, ...);
+
+
+/**
+ * Initialize the syscall function.
+ **/
+int __crt_syscall_init(void);

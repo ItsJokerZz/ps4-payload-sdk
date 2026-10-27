@@ -273,6 +273,11 @@ __crt_start(void) {
     *bss = 0;
   }
 
+  // without a syscall function there is nothing left to do but to return
+  if((err=__crt_syscall_init())) {
+    return err;
+  }
+
   // initialize crt
   if((err=payload_init())) {
     return payload_terminate(err);

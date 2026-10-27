@@ -322,7 +322,7 @@ kexec(int (*fn)(struct thread*, kexec_args_t*), ...) {
   a5 = __builtin_va_arg(ap, long);
   __builtin_va_end(ap);
 
-  if((err=__syscall(SYS_kexec, (long)fn, a1, a2, a3, a4, a5)) < 0) {
+  if((err=__crt_syscall(SYS_kexec, (long)fn, a1, a2, a3, a4, a5)) < 0) {
     return err;
   }
 
@@ -591,7 +591,7 @@ kernel_get_fw_version(void) {
   unsigned long size = sizeof(mib);
   unsigned int version = 0;
 
-  if(__syscall(SYS_sysctl, mib, 2, &version, &size, 0, 0)) {
+  if(__crt_syscall(SYS_sysctl, mib, 2, &version, &size, 0, 0)) {
     return 0;
   }
 
@@ -1232,7 +1232,7 @@ kernel_get_proc(int pid) {
   unsigned long next = 0;
 
   if(pid <= 0) {
-    pid = __syscall(SYS_getpid);
+    pid = __crt_syscall(SYS_getpid);
   }
 
   if(kernel_copyout(KERNEL_ADDRESS_ALLPROC, &addr, sizeof(addr))) {
@@ -1467,7 +1467,7 @@ kernel_dynlib_resolve(int pid, int handle, const char *nid) {
   }
 
   buf_size = dynsec.symtabsize + dynsec.strtabsize;
-  if((buf_start=(char*)__syscall(SYS_mmap, 0l, buf_size,
+  if((buf_start=(char*)__crt_syscall(SYS_mmap, 0l, buf_size,
 				 PROT_READ | PROT_WRITE,
 				 MAP_ANONYMOUS | MAP_PRIVATE,
 				 -1, 0l)) == MAP_FAILED) {
@@ -1478,11 +1478,11 @@ kernel_dynlib_resolve(int pid, int handle, const char *nid) {
   strtab = buf_start + dynsec.symtabsize;
 
   if(kernel_copyout(dynsec.symtab, symtab, dynsec.symtabsize) < 0) {
-    __syscall(SYS_munmap, buf_start, buf_size);
+    __crt_syscall(SYS_munmap, buf_start, buf_size);
     return 0;
   }
   if(kernel_copyout(dynsec.strtab, strtab, dynsec.strtabsize) < 0) {
-    __syscall(SYS_munmap, buf_start, buf_size);
+    __crt_syscall(SYS_munmap, buf_start, buf_size);
     return 0;
   }
 
@@ -1497,7 +1497,7 @@ kernel_dynlib_resolve(int pid, int handle, const char *nid) {
     }
   }
 
-  __syscall(SYS_munmap, buf_start, buf_size);
+  __crt_syscall(SYS_munmap, buf_start, buf_size);
 
   return vaddr;
 }
@@ -2125,8 +2125,8 @@ kernel_set_vmem_protection(int pid, unsigned long addr, unsigned long len, int p
 int
 kernel_mprotect(int pid, unsigned long addr, unsigned long len, int prot) {
   // a process can change the protection of its own memory without the kernel's help
-  if(pid == -1 || pid == __syscall(SYS_getpid)) {
-    return (int)__syscall(SYS_mprotect, addr, len, prot);
+  if(pid == -1 || pid == __crt_syscall(SYS_getpid)) {
+    return (int)__crt_syscall(SYS_mprotect, addr, len, prot);
   }
 
   return kernel_set_vmem_protection(pid, addr, len, prot);

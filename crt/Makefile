@@ -22,7 +22,7 @@ CFLAGS += -fvisibility-nodllstorageclass=default -Wall -Werror
 CFLAGS += -fms-extensions -Wno-microsoft-anon-tag
 CFLAGS += -O1
 
-OBJ := crt.o klog.o kernel.o rtld.o rtld_so.o rtld_sprx.o rtld_payload.o \
+OBJ := crt.o syscall.o klog.o kernel.o rtld.o rtld_so.o rtld_sprx.o rtld_payload.o \
        rtld_dlfcn.o patch.o mdbg.o nid.o _start.o
 
 .PHONY: all clean install
