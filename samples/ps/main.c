@@ -14,22 +14,31 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
+
 #include <sys/types.h>
+#include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/sysctl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(__PROSPERO__)
+#include <ps5/kernel.h>
+#else
 #include <ps4/kernel.h>
-
-
-#define MiB(x) ((x) / (1024.0 * 1024))
+#endif
 
 
 typedef struct app_info {
   uint32_t app_id;
   uint64_t unknown1;
+#if defined(__PROSPERO__)
+  uint32_t app_type;
+  char     title_id[10];
+#else
   char     title_id[14];
+#endif
   char     unknown2[0x3c];
 } app_info_t;
 
@@ -41,6 +50,8 @@ static char *state_abbrev[] = {
   "", "START", "RUN\0\0\0", "SLEEP", "STOP", "ZOMB", "WAIT", "LOCK"
 };
 
+
+#define MiB(x) ((x) / (1024.0 * 1024))
 
 int
 main() {
@@ -68,8 +79,9 @@ main() {
     return -1;
   }
 
-  printf("     PID      PPID     PGID      SID      UID"
-         "           AuthId      State      AppId    TitleId     Memory (MiB)  Command\n");
+
+  printf("\n     PID      PPID     PGID      SID      UID           AuthId"
+        "      State  AppId  TitleId     Memory (MiB)  Command\n");
   for(void *ptr=buf; ptr<(buf+buf_size);) {
     struct kinfo_proc *ki = (struct kinfo_proc*)ptr;
     ptr += ki->ki_structsize;
@@ -78,7 +90,7 @@ main() {
       memset(&appinfo, 0, sizeof(appinfo));
     }
 
-    printf("%8u  %8u %8u %8u %8u %016lx %10s   %08x  %9s  %6.1f / %6.1f  %s\n",
+    printf("%8u  %8u %8u %8u %8u %016lx %10s   %04x  %s  %6.1f / %6.1f  %s\n",
 	   ki->ki_pid, ki->ki_ppid, ki->ki_pgid, ki->ki_sid,
 	   ki->ki_uid, kernel_get_ucred_authid(ki->ki_pid),
            state_abbrev[(int)ki->ki_stat], appinfo.app_id,
