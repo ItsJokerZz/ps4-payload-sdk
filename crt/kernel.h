@@ -130,6 +130,8 @@ typedef struct dynlib_obj {
 
 
 extern unsigned long KERNEL_ADDRESS_ROOTVNODE;
+extern unsigned long KERNEL_ADDRESS_DMAP_BASE;
+extern unsigned long KERNEL_OFFSET_VMSPACE_VM_PMAP;
 extern unsigned long KERNEL_ADDRESS_PRISON0;
 
 extern unsigned long KERNEL_ADDRESS_IMAGE_BASE;
@@ -177,5 +179,20 @@ unsigned long kernel_find_pattern(unsigned long addr, unsigned int len,
 				  const char* pattern);
 int kernel_patch(unsigned long addr, const void* before, const void* after,
 		 unsigned short size);
+
+
+unsigned long kernel_find_pattern_kexec(unsigned long addr, unsigned int len, const char* pattern);
+int kernel_patch_kexec(unsigned long addr, const void* before, const void* after, unsigned short size);
+int kernel_proc_getpaddr(int pid, unsigned long vaddr, unsigned long* paddr, unsigned long* plen);
+int kernel_proc_copyin(int pid, const void* buf, unsigned long addr, unsigned long len);
+int kernel_proc_copyout(int pid, unsigned long addr, void* buf, unsigned long len);
+int kernel_proc_setchar(int pid, unsigned long addr, char val);
+int kernel_proc_setshort(int pid, unsigned long addr, short val);
+int kernel_proc_setint(int pid, unsigned long addr, int val);
+int kernel_proc_setlong(int pid, unsigned long addr, long val);
+char kernel_proc_getchar(int pid, unsigned long addr);
+short kernel_proc_getshort(int pid, unsigned long addr);
+int kernel_proc_getint(int pid, unsigned long addr);
+long kernel_proc_getlong(int pid, unsigned long addr);
 
 int __kernel_init(payload_args_t* args);
