@@ -25,6 +25,7 @@ mkfifo(const char *path, mode_t mode) {
 
   if((err=syscall(SYS_mkfifo, path, mode))) {
     errno = -err;
+    return -1;
   }
 
   return 0;
