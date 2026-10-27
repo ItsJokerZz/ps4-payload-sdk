@@ -14,74 +14,60 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
-#include <errno.h>
 #include <dlfcn.h>
-#include <unistd.h>
-#include <string.h>
 
 
-#define SYS_dynlib_dlsym   591
-#define SYS_dynlib_load    594
-#define SYS_dynlib_unload  595
-
-
-static char dlerror_str[0x100] = {0};
+/**
+ * Implemented in ../crt/rtld_payload.c
+ **/
+__attribute__((weak)) void* __dlopen(const char*, int);
+__attribute__((weak)) int   __dladdr(const void*, Dl_info*);
+__attribute__((weak)) void* __dlsym(void*, const char*);
+__attribute__((weak)) int   __dlclose(void*);
+__attribute__((weak)) char* __dlerror(void);
 
 
 void*
 dlopen(const char *filename, int flags) {
-  int handle;
-  int err;
-
-  if((err=syscall(SYS_dynlib_load, filename, 0, &handle, 0))) {
-    strerror_r(-err, dlerror_str, sizeof(dlerror_str));
-    return 0;
+  if(__dlopen) {
+    return __dlopen(filename, flags);
   }
-
-  dlerror_str[0] = 0;
-  return (void*)(long)handle;
+  return 0;
 }
 
 
 void*
 dlsym(void *handle, const char *symbol) {
-  void* addr = 0;
-  int err;
-
-  if((err=syscall(SYS_dynlib_dlsym, handle, symbol, &addr))) {
-    strerror_r(-err, dlerror_str, sizeof(dlerror_str));
-    return 0;
+  if(__dlsym) {
+    return __dlsym(handle, symbol);
   }
-
-  dlerror_str[0] = 0;
-  return addr;
-}
-
-
-int
-dlclose(void *handle) {
-  int err;
-
-  if((err=syscall(SYS_dynlib_unload, handle, 0, 0, 0, 0, 0))) {
-    strerror_r(-err, dlerror_str, sizeof(dlerror_str));
-    return -1;
-  }
-
-  dlerror_str[0] = 0;
   return 0;
 }
 
 
 int
 dladdr(const void *addr, Dl_info *info) {
-#warning dladdr is not implemented
-  errno = ENOTSUP;
+  if(__dladdr) {
+    return __dladdr(addr, info);
+  }
+  return 0;
+}
+
+
+int
+dlclose(void *handle) {
+  if(__dlclose) {
+    return __dlclose(handle);
+  }
   return -1;
 }
 
 
 char*
 dlerror(void) {
-  return dlerror_str;
-}
+  if(__dlerror) {
+    return __dlerror();
+  }
 
+  return 0;
+}

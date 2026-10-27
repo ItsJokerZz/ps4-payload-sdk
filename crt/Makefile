@@ -19,9 +19,11 @@ include ../Makefile.inc
 CFLAGS += -ffreestanding -fno-builtin -nostdlib -fPIC
 CFLAGS += -target x86_64-scei-ps4 -fno-plt -fno-stack-protector
 CFLAGS += -fvisibility-nodllstorageclass=default -Wall -Werror
+CFLAGS += -fms-extensions -Wno-microsoft-anon-tag
 CFLAGS += -O1
 
-OBJ := crt.o klog.o kernel.o rtld.o patch.o mdbg.o nid.o
+OBJ := crt.o klog.o kernel.o rtld.o rtld_so.o rtld_sprx.o rtld_payload.o \
+       rtld_dlfcn.o patch.o mdbg.o nid.o
 
 .PHONY: all clean install
 

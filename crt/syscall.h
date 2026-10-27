@@ -16,15 +16,24 @@ along with this program; see the file COPYING. If not, see
 
 #pragma once
 
+#define SYS_read         3
+#define SYS_write        4
+#define SYS_open         5
+#define SYS_close        6
 #define SYS_kexec        11
 #define SYS_getpid       20
+#define SYS_access       33
 #define SYS_munmap       73
+#define SYS_mprotect     74
 #define SYS_stat         188
 #define SYS_sysctl       202
+#define SYS___getcwd     326
 #define SYS_mmap         477
+#define SYS_lseek        478
 #define SYS_mdbg_call    573
 #define SYS_dynlib_dlsym 591
 #define SYS_dynlib_load  594
+#define SYS_dynlib_unload 595
 
 #define DYNLIB_LOAD(name, handle) __syscall(SYS_dynlib_load, name, 0, handle, 0)
 #define DYNLIB_DLSYM(handle, name, addr) __syscall(SYS_dynlib_dlsym, handle, name, addr)
