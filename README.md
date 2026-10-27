@@ -67,28 +67,30 @@ john@localhost:ps4-payload-dev/sdk$ sudo make DESTDIR=/opt/ps4-payload-sdk insta
 ```
 
 ## Working firmwares
-The SDK relies on a couple of kernel offsets that are typically unique for a given
-firmware version. Currently, offsets for the following versions are included
-(check marked are confirmed working):
-- [ ] 3.50
-- [ ] 3.55
-- [ ] 3.70
-- [ ] 4.00 and 4.01
-- [ ] 4.05
-- [ ] 4.06
-- [ ] 4.07
-- [ ] 4.50 and 4.55
-- [ ] 4.70
+Offsets for all listed versions are included in the SDK.
+
+<details>
+<summary>Firmware offsets</summary>
+
+- [x] 3.50
+- [x] 3.55
+- [x] 3.70
+- [x] 4.00 and 4.01
+- [x] 4.05
+- [x] 4.06
+- [x] 4.07
+- [x] 4.50 and 4.55
+- [x] 4.70
 - [x] 4.71 to 4.74
-- [ ] 5.00 and 5.01
+- [x] 5.00 and 5.01
 - [x] 5.03 to 5.07
-- [ ] 5.50
-- [ ] 5.53
-- [ ] 5.55 and 5.56
-- [ ] 6.00 and 6.02
-- [ ] 6.20
-- [ ] 6.50 and 6.51
-- [ ] 6.70 to 6.72
+- [x] 5.50
+- [x] 5.53
+- [x] 5.55 and 5.56
+- [x] 6.00 and 6.02
+- [x] 6.20
+- [x] 6.50 and 6.51
+- [x] 6.70 to 6.72
 - [x] 7.00
 - [x] 7.01
 - [x] 7.02
@@ -104,12 +106,14 @@ firmware version. Currently, offsets for the following versions are included
 - [x] 11.02
 - [x] 11.50 and 11.52
 - [x] 12.00 and 12.02
-- [ ] 12.50 and 12.52
-- [ ] 13.00
-- [ ] 13.02 and 13.04
+- [x] 12.50 and 12.52
+- [x] 13.00
+- [x] 13.02 and 13.04
+- [x] 13.50
+- [x] 13.52
+- [x] 14.00
 
-Please help confirming untested versions by sending a pull request that updates README.md
-accordingly.
+</details>
 
 ## Reporting Bugs
 If you encounter problems with the SDK, please [file a github issue][issues].
