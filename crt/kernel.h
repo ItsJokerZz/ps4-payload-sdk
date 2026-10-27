@@ -16,6 +16,8 @@ along with this program; see the file COPYING. If not, see
 
 #pragma once
 
+#include "payload.h"
+
 
 #define KERNEL_DLSYM(handle, sym) \
     (sym=(void*)kernel_dynlib_dlsym(-1, handle, #sym))
@@ -176,4 +178,4 @@ unsigned long kernel_find_pattern(unsigned long addr, unsigned int len,
 int kernel_patch(unsigned long addr, const void* before, const void* after,
 		 unsigned short size);
 
-int __kernel_init(void);
+int __kernel_init(payload_args_t* args);

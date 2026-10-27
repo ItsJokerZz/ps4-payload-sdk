@@ -30,7 +30,7 @@ OBJ := crt.o syscall.o klog.o kernel.o rtld.o rtld_so.o rtld_sprx.o rtld_payload
 all: crt1.o
 
 crt1.o: $(OBJ)
-	$(LD) -m elf_x86_64 -r -o $@ $^
+	$(LD) -m elf_x86_64 -r --wrap=__crt_start -o $@ $^
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $^

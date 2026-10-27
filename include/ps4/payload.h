@@ -41,7 +41,8 @@ typedef struct payload_args {
 /**
  * Get the arguments that was passed to _start().
  *
- * The PS4 loader does not pass any, so this returns NULL there.
+ * The PS4 loader does not pass any, so only sys_dynlib_dlsym and
+ * payloadout are set there.
  **/
 payload_args_t* payload_get_args(void);
 
