@@ -131,6 +131,7 @@ typedef struct dynlib_obj {
 
 extern unsigned long KERNEL_ADDRESS_ROOTVNODE;
 extern unsigned long KERNEL_ADDRESS_DMAP_BASE;
+extern const unsigned long KERNEL_OFFSET_PROC_P_VMSPACE;
 extern unsigned long KERNEL_OFFSET_VMSPACE_VM_PMAP;
 extern unsigned long KERNEL_ADDRESS_PRISON0;
 
