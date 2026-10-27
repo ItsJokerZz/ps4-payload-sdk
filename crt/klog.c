@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 John Törnblom
+/* Copyright (C) 2024 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
+#include "kernel.h"
 #include "klog.h"
 #include "syscall.h"
 
@@ -84,20 +85,18 @@ klog_perror(const char *s) {
 
 int
 __klog_init(void) {
-  int err;
-
-  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2, "snprintf", &snprintf))) {
-    return err;
+  if(!KERNEL_DLSYM(0x2, snprintf)) {
+    return -1;
   }
-  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2, "strerror", &strerror))) {
-    return err;
+  if(!KERNEL_DLSYM(0x2, strerror)) {
+    return -1;
   }
-  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2, "vsnprintf", &vsnprintf))) {
-    return err;
+  if(!KERNEL_DLSYM(0x2, vsnprintf)) {
+    return -1;
   }
-  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2001, "__error", &__error))) {
-    if((err=__crt_syscall(SYS_sprx_dlsym, 0x1, "__error", &__error))) {
-      return err;
+  if(!KERNEL_DLSYM(0x1, __error)) {
+    if(!KERNEL_DLSYM(0x2001, __error)) {
+      return -1;
     }
   }
 
