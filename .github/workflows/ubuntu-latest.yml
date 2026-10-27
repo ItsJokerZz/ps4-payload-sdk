@@ -22,7 +22,7 @@ jobs:
     - name: Install prerequisites
       run: |
         sudo apt update
-        sudo apt install bash cmake meson wget
+        sudo apt install mingw-w64 cmake meson wget
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 23
@@ -38,6 +38,7 @@ jobs:
       env:
         DESTDIR: ${{ runner.tool_cache }}/ps4-payload-sdk
         PS4_PAYLOAD_SDK: ${{ runner.tool_cache }}/ps4-payload-sdk
+        WIN: 1
 
     - name: Bundle SDK
       run: |
