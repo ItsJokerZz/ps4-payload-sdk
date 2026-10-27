@@ -19,6 +19,10 @@ include Makefile.inc
 TOPTARGETS := all clean install
 SUBDIRS    := crt include libc libufs sce_stubs host
 
+ifdef WIN
+	SUBDIRS += host/win
+endif
+
 .PHONY: $(TOPTARGETS) $(SUBDIRS) install
 
 $(TOPTARGETS): $(SUBDIRS)
