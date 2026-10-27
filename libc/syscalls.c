@@ -16,6 +16,72 @@ along with this program; see the file COPYING. If not, see
 
 #include <errno.h>
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <poll.h>
+#include <dirent.h>
+#include <sched.h>
+#include <semaphore.h>
+#include <mqueue.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/mount.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <sys/uio.h>
+#include <sys/ptrace.h>
+#include <sys/ktrace.h>
+#include <sys/sysctl.h>
+#include <sys/event.h>
+#include <sys/ucontext.h>
+#include <sys/jail.h>
+#include <sys/acl.h>
+#include <sys/extattr.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
+#include <aio.h>
+#include <sys/cpuset.h>
+#include <sys/rtprio.h>
+#include <sys/thr.h>
+#include <sys/umtx.h>
+#include <sys/module.h>
+#include <sys/linker.h>
+#include <sys/procctl.h>
+#include <sys/mac.h>
+#include <sys/loginclass.h>
+#include <netinet/sctp.h>
+#include <ufs/ufs/quota.h>
+#include <sys/kenv.h>
+#include <sys/select.h>
+#include <sys/socketvar.h>
+#include <sys/syscall.h>
+#include <sys/param.h>
+#include <sys/cpuset.h>
+#include <sys/_cpuset.h>
+#include <sys/rctl.h>
+#include <sys/timex.h>
+#include <sys/ipc.h>
+#include <sys/utsname.h>
+#include <sys/reboot.h>
+#include <sys/_types.h>
+#include <pthread_np.h>
+#include <sys/random.h>
+#include <sys/_umtx.h>
+#include <sys/user.h>
+#include <machine/sysarch.h>
+#include <bsm/audit.h>
+#include <sys/vmmeter.h>
+
 
 long
 __syscall_ret(long ret) {
@@ -27,8 +93,8 @@ __syscall_ret(long ret) {
   return ret;
 }
 
-void
-wait4() {
+__attribute__((naked)) pid_t
+wait4(pid_t a0, int *a1, int a2, struct rusage *a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -45,8 +111,8 @@ wait4() {
     );
 }
 
-void
-ktrace() {
+__attribute__((naked)) int
+ktrace(const char *a0, int a1, int a2, pid_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -63,8 +129,8 @@ ktrace() {
     );
 }
 
-void
-setlogin() {
+__attribute__((naked)) int
+setlogin(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -81,8 +147,8 @@ setlogin() {
     );
 }
 
-void
-acct() {
+__attribute__((naked)) int
+acct(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -99,8 +165,8 @@ acct() {
     );
 }
 
-void
-reboot() {
+__attribute__((naked)) int
+reboot(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -117,8 +183,8 @@ reboot() {
     );
 }
 
-void
-revoke() {
+__attribute__((naked)) int
+revoke(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -135,8 +201,8 @@ revoke() {
     );
 }
 
-void
-chroot() {
+__attribute__((naked)) int
+chroot(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -153,8 +219,8 @@ chroot() {
     );
 }
 
-void
-sbrk() {
+__attribute__((naked)) void *
+sbrk(intptr_t a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -207,8 +273,8 @@ vadvise() {
     );
 }
 
-void
-swapon() {
+__attribute__((naked)) int
+swapon(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -225,8 +291,8 @@ swapon() {
     );
 }
 
-void
-adjtime() {
+__attribute__((naked)) int
+adjtime(const struct timeval *a0, struct timeval *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -243,8 +309,8 @@ adjtime() {
     );
 }
 
-void
-nlm_syscall() {
+__attribute__((naked)) int
+nlm_syscall(int a0, int a1, int a2, char **a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -261,8 +327,8 @@ nlm_syscall() {
     );
 }
 
-void
-nfssvc() {
+__attribute__((naked)) int
+nfssvc(int a0, void *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -279,8 +345,8 @@ nfssvc() {
     );
 }
 
-void
-lgetfh() {
+__attribute__((naked)) int
+lgetfh(const char *a0, fhandle_t *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -297,8 +363,8 @@ lgetfh() {
     );
 }
 
-void
-getfh() {
+__attribute__((naked)) int
+getfh(const char *a0, fhandle_t *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -315,8 +381,8 @@ getfh() {
     );
 }
 
-void
-rtprio() {
+__attribute__((naked)) int
+rtprio(int a0, pid_t a1, struct rtprio *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -333,8 +399,8 @@ rtprio() {
     );
 }
 
-void
-semsys() {
+__attribute__((naked)) int
+semsys(int a0, ...) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -351,8 +417,8 @@ semsys() {
     );
 }
 
-void
-msgsys() {
+__attribute__((naked)) int
+msgsys(int a0, ...) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -369,8 +435,8 @@ msgsys() {
     );
 }
 
-void
-shmsys() {
+__attribute__((naked)) int
+shmsys(int a0, ...) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -387,8 +453,8 @@ shmsys() {
     );
 }
 
-void
-setfib() {
+__attribute__((naked)) int
+setfib(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -405,8 +471,8 @@ setfib() {
     );
 }
 
-void
-ntp_adjtime() {
+__attribute__((naked)) int
+ntp_adjtime(struct timex *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -423,8 +489,8 @@ ntp_adjtime() {
     );
 }
 
-void
-undelete() {
+__attribute__((naked)) int
+undelete(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -441,8 +507,8 @@ undelete() {
     );
 }
 
-void
-semget() {
+__attribute__((naked)) int
+semget(key_t a0, int a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -459,8 +525,8 @@ semget() {
     );
 }
 
-void
-semop() {
+__attribute__((naked)) int
+semop(int a0, struct sembuf *a1, size_t a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -477,8 +543,8 @@ semop() {
     );
 }
 
-void
-msgget() {
+__attribute__((naked)) int
+msgget(key_t a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -495,8 +561,8 @@ msgget() {
     );
 }
 
-void
-msgsnd() {
+__attribute__((naked)) int
+msgsnd(int a0, const void *a1, size_t a2, int a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -513,8 +579,8 @@ msgsnd() {
     );
 }
 
-void
-msgrcv() {
+__attribute__((naked)) int
+msgrcv(int a0, void *a1, size_t a2, long a3, int a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -531,8 +597,8 @@ msgrcv() {
     );
 }
 
-void
-shmat() {
+__attribute__((naked)) void *
+shmat(int a0, const void *a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -549,8 +615,8 @@ shmat() {
     );
 }
 
-void
-shmdt() {
+__attribute__((naked)) int
+shmdt(const void *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -567,8 +633,8 @@ shmdt() {
     );
 }
 
-void
-shmget() {
+__attribute__((naked)) int
+shmget(key_t a0, size_t a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -657,8 +723,8 @@ clock_nanosleep() {
     );
 }
 
-void
-clock_getcpuclockid2() {
+__attribute__((naked)) int
+clock_getcpuclockid2(id_t a0, int a1, clockid_t *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -675,8 +741,8 @@ clock_getcpuclockid2() {
     );
 }
 
-void
-ntp_gettime() {
+__attribute__((naked)) int
+ntp_gettime(struct ntptimeval *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -747,8 +813,8 @@ nlstat() {
     );
 }
 
-void
-fhopen() {
+__attribute__((naked)) int
+fhopen(const struct fhandle *a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -765,8 +831,8 @@ fhopen() {
     );
 }
 
-void
-fhstat() {
+__attribute__((naked)) int
+fhstat(const struct fhandle *a0, struct stat *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -783,8 +849,8 @@ fhstat() {
     );
 }
 
-void
-modnext() {
+__attribute__((naked)) int
+modnext(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -801,8 +867,8 @@ modnext() {
     );
 }
 
-void
-modstat() {
+__attribute__((naked)) int
+modstat(int a0, struct module_stat *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -819,8 +885,8 @@ modstat() {
     );
 }
 
-void
-modfnext() {
+__attribute__((naked)) int
+modfnext(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -837,8 +903,8 @@ modfnext() {
     );
 }
 
-void
-modfind() {
+__attribute__((naked)) int
+modfind(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -855,8 +921,8 @@ modfind() {
     );
 }
 
-void
-kldload() {
+__attribute__((naked)) int
+kldload(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -873,8 +939,8 @@ kldload() {
     );
 }
 
-void
-kldunload() {
+__attribute__((naked)) int
+kldunload(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -891,8 +957,8 @@ kldunload() {
     );
 }
 
-void
-kldfind() {
+__attribute__((naked)) int
+kldfind(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -909,8 +975,8 @@ kldfind() {
     );
 }
 
-void
-kldnext() {
+__attribute__((naked)) int
+kldnext(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -927,8 +993,8 @@ kldnext() {
     );
 }
 
-void
-kldstat() {
+__attribute__((naked)) int
+kldstat(int a0, struct kld_file_stat *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -945,8 +1011,8 @@ kldstat() {
     );
 }
 
-void
-kldfirstmod() {
+__attribute__((naked)) int
+kldfirstmod(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -963,8 +1029,8 @@ kldfirstmod() {
     );
 }
 
-void
-utrace() {
+__attribute__((naked)) int
+utrace(const void *a0, size_t a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -981,8 +1047,8 @@ utrace() {
     );
 }
 
-void
-kldsym() {
+__attribute__((naked)) int
+kldsym(int a0, int a1, void *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -999,8 +1065,8 @@ kldsym() {
     );
 }
 
-void
-jail() {
+__attribute__((naked)) int
+jail(struct jail *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1179,8 +1245,8 @@ __acl_aclcheck_fd() {
     );
 }
 
-void
-extattrctl() {
+__attribute__((naked)) int
+extattrctl(const char *a0, int a1, const char *a2, int a3, const char *a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1197,8 +1263,8 @@ extattrctl() {
     );
 }
 
-void
-extattr_set_file() {
+__attribute__((naked)) int
+extattr_set_file(const char *a0, int a1, const char *a2, const void *a3, size_t a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1215,8 +1281,8 @@ extattr_set_file() {
     );
 }
 
-void
-extattr_get_file() {
+__attribute__((naked)) ssize_t
+extattr_get_file(const char *a0, int a1, const char *a2, void *a3, size_t a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1233,8 +1299,8 @@ extattr_get_file() {
     );
 }
 
-void
-extattr_delete_file() {
+__attribute__((naked)) int
+extattr_delete_file(const char *a0, int a1, const char *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1251,8 +1317,8 @@ extattr_delete_file() {
     );
 }
 
-void
-extattr_set_fd() {
+__attribute__((naked)) int
+extattr_set_fd(int a0, int a1, const char *a2, const void *a3, size_t a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1269,8 +1335,8 @@ extattr_set_fd() {
     );
 }
 
-void
-extattr_get_fd() {
+__attribute__((naked)) ssize_t
+extattr_get_fd(int a0, int a1, const char *a2, void *a3, size_t a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1287,8 +1353,8 @@ extattr_get_fd() {
     );
 }
 
-void
-extattr_delete_fd() {
+__attribute__((naked)) int
+extattr_delete_fd(int a0, int a1, const char *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1431,8 +1497,8 @@ __mac_set_file() {
     );
 }
 
-void
-mac_syscall() {
+__attribute__((naked)) int
+mac_syscall(const char *a0, int a1, void *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1449,8 +1515,8 @@ mac_syscall() {
     );
 }
 
-void
-fhstatfs() {
+__attribute__((naked)) int
+fhstatfs(const struct fhandle *a0, struct statfs *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1521,8 +1587,8 @@ __mac_set_link() {
     );
 }
 
-void
-extattr_set_link() {
+__attribute__((naked)) int
+extattr_set_link(const char *a0, int a1, const char *a2, const void *a3, size_t a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1539,8 +1605,8 @@ extattr_set_link() {
     );
 }
 
-void
-extattr_get_link() {
+__attribute__((naked)) ssize_t
+extattr_get_link(const char *a0, int a1, const char *a2, void *a3, size_t a4) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1557,8 +1623,8 @@ extattr_get_link() {
     );
 }
 
-void
-extattr_delete_link() {
+__attribute__((naked)) int
+extattr_delete_link(const char *a0, int a1, const char *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1593,8 +1659,8 @@ __mac_execve() {
     );
 }
 
-void
-swapoff() {
+__attribute__((naked)) int
+swapoff(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1683,8 +1749,8 @@ __acl_aclcheck_link() {
     );
 }
 
-void
-thr_create() {
+__attribute__((naked)) int
+thr_create(ucontext_t *a0, long *a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1701,8 +1767,8 @@ thr_create() {
     );
 }
 
-void
-thr_exit() {
+__attribute__((naked)) void
+thr_exit(long *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1719,8 +1785,8 @@ thr_exit() {
     );
 }
 
-void
-thr_kill() {
+__attribute__((naked)) int
+thr_kill(long a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1737,8 +1803,8 @@ thr_kill() {
     );
 }
 
-void
-jail_attach() {
+__attribute__((naked)) int
+jail_attach(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1755,8 +1821,8 @@ jail_attach() {
     );
 }
 
-void
-extattr_list_fd() {
+__attribute__((naked)) ssize_t
+extattr_list_fd(int a0, int a1, void *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1773,8 +1839,8 @@ extattr_list_fd() {
     );
 }
 
-void
-extattr_list_file() {
+__attribute__((naked)) ssize_t
+extattr_list_file(const char *a0, int a1, void *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1791,8 +1857,8 @@ extattr_list_file() {
     );
 }
 
-void
-extattr_list_link() {
+__attribute__((naked)) ssize_t
+extattr_list_link(const char *a0, int a1, void *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1809,8 +1875,8 @@ extattr_list_link() {
     );
 }
 
-void
-thr_suspend() {
+__attribute__((naked)) int
+thr_suspend(const struct timespec *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1827,8 +1893,8 @@ thr_suspend() {
     );
 }
 
-void
-thr_wake() {
+__attribute__((naked)) int
+thr_wake(long a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1845,8 +1911,8 @@ thr_wake() {
     );
 }
 
-void
-kldunloadf() {
+__attribute__((naked)) int
+kldunloadf(int a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1863,8 +1929,8 @@ kldunloadf() {
     );
 }
 
-void
-audit() {
+__attribute__((naked)) int
+audit(const void *a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1881,8 +1947,8 @@ audit() {
     );
 }
 
-void
-auditon() {
+__attribute__((naked)) int
+auditon(int a0, void *a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1899,8 +1965,8 @@ auditon() {
     );
 }
 
-void
-getauid() {
+__attribute__((naked)) int
+getauid(au_id_t *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1917,8 +1983,8 @@ getauid() {
     );
 }
 
-void
-setauid() {
+__attribute__((naked)) int
+setauid(const au_id_t *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1935,8 +2001,8 @@ setauid() {
     );
 }
 
-void
-getaudit() {
+__attribute__((naked)) int
+getaudit(struct auditinfo *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1953,8 +2019,8 @@ getaudit() {
     );
 }
 
-void
-setaudit() {
+__attribute__((naked)) int
+setaudit(const struct auditinfo *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1971,8 +2037,8 @@ setaudit() {
     );
 }
 
-void
-getaudit_addr() {
+__attribute__((naked)) int
+getaudit_addr(struct auditinfo_addr *a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -1989,8 +2055,8 @@ getaudit_addr() {
     );
 }
 
-void
-setaudit_addr() {
+__attribute__((naked)) int
+setaudit_addr(const struct auditinfo_addr *a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2007,8 +2073,8 @@ setaudit_addr() {
     );
 }
 
-void
-auditctl() {
+__attribute__((naked)) int
+auditctl(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2025,8 +2091,8 @@ auditctl() {
     );
 }
 
-void
-thr_new() {
+__attribute__((naked)) int
+thr_new(struct thr_param *a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2151,8 +2217,8 @@ kmq_unlink() {
     );
 }
 
-void
-abort2() {
+__attribute__((naked)) void
+abort2(const char *a0, int a1, void **a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2169,8 +2235,8 @@ abort2() {
     );
 }
 
-void
-thr_set_name() {
+__attribute__((naked)) int
+thr_set_name(long a0, const char *a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2187,8 +2253,8 @@ thr_set_name() {
     );
 }
 
-void
-sctp_peeloff() {
+__attribute__((naked)) int
+sctp_peeloff(int a0, sctp_assoc_t a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2205,8 +2271,8 @@ sctp_peeloff() {
     );
 }
 
-void
-thr_kill2() {
+__attribute__((naked)) int
+thr_kill2(pid_t a0, long a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2223,8 +2289,8 @@ thr_kill2() {
     );
 }
 
-void
-cpuset() {
+__attribute__((naked)) int
+cpuset(cpusetid_t *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2241,8 +2307,8 @@ cpuset() {
     );
 }
 
-void
-cpuset_setid() {
+__attribute__((naked)) int
+cpuset_setid(cpuwhich_t a0, id_t a1, cpusetid_t a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2277,8 +2343,8 @@ gssd_syscall() {
     );
 }
 
-void
-jail_get() {
+__attribute__((naked)) int
+jail_get(struct iovec *a0, unsigned int a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2295,8 +2361,8 @@ jail_get() {
     );
 }
 
-void
-jail_set() {
+__attribute__((naked)) int
+jail_set(struct iovec *a0, unsigned int a1, int a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2313,8 +2379,8 @@ jail_set() {
     );
 }
 
-void
-jail_remove() {
+__attribute__((naked)) int
+jail_remove(int a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2367,8 +2433,8 @@ freebsd7___semctl() {
     );
 }
 
-void
-msgctl() {
+__attribute__((naked)) int
+msgctl(int a0, int a1, struct msqid_ds *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2385,8 +2451,8 @@ msgctl() {
     );
 }
 
-void
-shmctl() {
+__attribute__((naked)) int
+shmctl(int a0, int a1, struct shmid_ds *a2) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2403,8 +2469,8 @@ shmctl() {
     );
 }
 
-void
-lpathconf() {
+__attribute__((naked)) long
+lpathconf(const char *a0, int a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2511,8 +2577,8 @@ pdgetpid() {
     );
 }
 
-void
-getloginclass() {
+__attribute__((naked)) int
+getloginclass(char *a0, size_t a1) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2529,8 +2595,8 @@ getloginclass() {
     );
 }
 
-void
-setloginclass() {
+__attribute__((naked)) int
+setloginclass(const char *a0) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2547,8 +2613,8 @@ setloginclass() {
     );
 }
 
-void
-rctl_get_racct() {
+__attribute__((naked)) int
+rctl_get_racct(const char *a0, size_t a1, char *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2565,8 +2631,8 @@ rctl_get_racct() {
     );
 }
 
-void
-rctl_get_rules() {
+__attribute__((naked)) int
+rctl_get_rules(const char *a0, size_t a1, char *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2583,8 +2649,8 @@ rctl_get_rules() {
     );
 }
 
-void
-rctl_get_limits() {
+__attribute__((naked)) int
+rctl_get_limits(const char *a0, size_t a1, char *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2601,8 +2667,8 @@ rctl_get_limits() {
     );
 }
 
-void
-rctl_add_rule() {
+__attribute__((naked)) int
+rctl_add_rule(const char *a0, size_t a1, char *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2619,8 +2685,8 @@ rctl_add_rule() {
     );
 }
 
-void
-rctl_remove_rule() {
+__attribute__((naked)) int
+rctl_remove_rule(const char *a0, size_t a1, char *a2, size_t a3) {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2637,8 +2703,8 @@ rctl_remove_rule() {
     );
 }
 
-int
-vfork() {
+pid_t
+vfork(void) {
   extern int fork(void);
 
   return fork();
@@ -2717,7 +2783,7 @@ numa_setaffinity() {
 }
 
 int
-procctl() {
+procctl(idtype_t a0, id_t a1, int a2, void *a3) {
   errno = ENOSYS;
   return -1;
 }

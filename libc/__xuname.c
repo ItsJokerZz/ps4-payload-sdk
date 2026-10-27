@@ -136,7 +136,11 @@ __xuname(int namesize, void *namebuf)
 		if (sysctl(mib, 2, q, &len, NULL, 0) == -1) {
 			if (errno == ENOMEM)
 				errno = oerrno;
-			else
+			else if (errno == ENOENT) {
+				/* no hw.machine on the PS4 */
+				errno = oerrno;
+				strlcpy(q, "amd64", namesize);
+			} else
 				rval = -1;
 		}
 		q[namesize - 1] = '\0';
