@@ -17,7 +17,7 @@
 include ../Makefile.inc
 
 CFLAGS := -ffreestanding -fno-builtin -nostdlib -fPIC
-CFLAGS += -target x86_64-scie-ps4 -fno-plt -fno-stack-protector
+CFLAGS += -target x86_64-scei-ps4 -fno-plt -fno-stack-protector
 CFLAGS += -Wall -Werror -fvisibility-nodllstorageclass=default
 
 SPRXS := $(wildcard *.sprx)
