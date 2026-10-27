@@ -32,7 +32,7 @@ LLVM_BINDIR := $(shell $(LLVM_CONFIG) --bindir)
 CC := $(LLVM_BINDIR)/clang
 AR := $(LLVM_BINDIR)/llvm-ar
 
-CFLAGS := -target x86_64-scie-ps4 -fPIC  -fno-plt -fno-stack-protector
+CFLAGS := -target x86_64-scei-ps4 -fPIC  -fno-plt -fno-stack-protector
 CFLAGS += -nobuiltininc -isystem ../include/freebsd-9.3
 CFLAGS += -fvisibility-nodllstorageclass=default
 CFLAGS += -O1 -D_LIBUFS
