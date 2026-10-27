@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 John Törnblom
+/* Copyright (C) 2024 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -37,6 +37,7 @@ hexdump(uint8_t* buf, size_t size) {
 
 static void
 random_hexdump(uint8_t* buf, size_t size) {
+
   memset(buf, 0, size);
   if(!sceRandomGetRandomNumber(buf, size)) {
     hexdump(buf, size);
@@ -69,9 +70,43 @@ test_random() {
 }
 
 
+int main();
+
+static int
+test_main() {
+  void* p;
+    
+  if(!(p=dlsym(RTLD_DEFAULT, "main"))) {
+    puts(dlerror());
+    return -1;
+  } else {
+      printf("main: %p\n", &main);
+      printf("p: %p\n", p);
+      return 0;
+  }
+}
+
+
+static int
+test_printf() {
+  void* p;
+    
+  if(!(p=dlsym(RTLD_DEFAULT, "printf"))) {
+    puts(dlerror());
+    return -1;
+  } else {
+      printf("printf: %p\n", &printf);
+      printf("p: %p\n", p);
+      return 0;
+  }
+}
+
+
 int main() {
 
   test_random();
+  test_main();
+  test_printf();
 
   return 0;
 }

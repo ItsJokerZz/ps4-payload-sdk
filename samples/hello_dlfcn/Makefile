@@ -25,7 +25,7 @@ endif
 
 ELF := hello_dlfcn.elf
 
-CFLAGS := -Wall -Werror -g
+CFLAGS := -Wall -Werror -g -rdynamic
 
 all: $(ELF)
 
@@ -37,3 +37,12 @@ clean:
 
 test: $(ELF)
 	$(PS4_DEPLOY) -h $(PS4_HOST) -p $(PS4_PORT) $^
+
+debug: $(ELF)
+	gdb-multiarch \
+	-ex "set architecture i386:x86-64" \
+	-ex "target extended-remote $(PS4_HOST):2159" \
+	-ex "file $(ELF)" \
+	-ex "remote put $(ELF) /data/$(ELF)" \
+	-ex "set remote exec-file /data/$(ELF)" \
+	-ex "start"

@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 John Törnblom
+/* Copyright (C) 2023 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -15,6 +15,8 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #ifndef PS4_URL
 #define PS4_URL "http://192.168.1.1"
@@ -27,17 +29,36 @@ int sceUserServiceTerminate(void);
 int sceSystemServiceLaunchWebBrowser(const char *uri, void*);
 
 
-int
-main() {
+/**
+ * init UserService
+ **/
+__attribute__((constructor)) static void
+constructor(void) {
   if(sceUserServiceInitialize(0)) {
     perror("sceUserServiceInitialize");
+  }
+}
 
-  } else if(sceSystemServiceLaunchWebBrowser(PS4_URL, 0)) {
+
+/**
+ * launch browser
+ **/
+int
+main() {
+  if(sceSystemServiceLaunchWebBrowser(PS4_URL, 0)) {
     perror("sceSystemServiceLaunchWebBrowser");
+    return EXIT_FAILURE;
   }
 
-  sceUserServiceTerminate();
+  return EXIT_SUCCESS;
+}
 
-  return 0;
+
+/**
+ * terminate UserService
+ **/
+__attribute__((destructor)) static void
+destructor(void) {
+  sceUserServiceTerminate();
 }
 

@@ -1,4 +1,4 @@
-#   Copyright (C) 2025 John Törnblom
+#   Copyright (C) 2023 John Törnblom
 #
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -23,19 +23,26 @@ else
     $(error PS4_PAYLOAD_SDK is undefined)
 endif
 
-PAYLOAD := hello_stdio.elf
-SRCS    := main.c
+ELF := hello_stdio.elf
 
 CFLAGS := -Wall -Werror -g
 
-all: $(PAYLOAD)
+all: $(ELF)
 
-%.elf: $(SRCS)
-	$(CC) $(CFLAGS) $^ -o $@
+$(ELF): main.c
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	-rm -f *.o *.elf
+	rm -f $(ELF)
 
-test: $(PAYLOAD)
+test: $(ELF)
 	echo "$(USER)" | $(PS4_DEPLOY) -i -h $(PS4_HOST) -p $(PS4_PORT) $^
 
+debug: $(ELF)
+	gdb-multiarch \
+	-ex "set architecture i386:x86-64" \
+	-ex "target extended-remote $(PS4_HOST):2159" \
+	-ex "file $(ELF)" \
+	-ex "remote put $(ELF) /data/$(ELF)" \
+	-ex "set remote exec-file /data/$(ELF)" \
+	-ex "start"
