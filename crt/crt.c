@@ -49,6 +49,48 @@ static void* jmpbuf[32];
 
 
 /**
+ * Resolve a symbol with the dynlib_dlsym syscall, made with a syscall
+ * instruction of our own. It is the only syscall made that way, since the
+ * syscall function is found with it.
+ **/
+static int
+payload_dlsym(int handle, const char* name, void* addr) {
+  register long r10 asm("r10") = 0;
+  register long r8  asm("r8")  = 0;
+  register long r9  asm("r9")  = 0;
+  unsigned long ret;
+  char err;
+
+  asm("syscall"
+      : "=a"(ret), "=@ccc"(err), "+r"(r10), "+r"(r8), "+r"(r9)
+      : "a"(SYS_sprx_dlsym), "D"((long)handle), "S"(name), "d"(addr)
+      : "rcx", "r11", "memory");
+
+  return (int)(err ? -ret : ret);
+}
+
+
+/**
+ * Find the syscall function. The PS5 loader hands the payload sceKernelDlsym
+ * to do that with, the PS4 loader hands over nothing. So look it up with a
+ * syscall of our own and give the init of the syscall function an args struct
+ * of its own, which nothing else sees.
+ **/
+static int
+payload_syscall_init(void) {
+  static payload_args_t args;
+
+  if(payload_dlsym(0x1, "sceKernelDlsym", &args.sys_dynlib_dlsym)) {
+    if(payload_dlsym(0x2001, "sceKernelDlsym", &args.sys_dynlib_dlsym)) {
+      return -1;
+    }
+  }
+
+  return __crt_syscall_init(&args);
+}
+
+
+/**
  * Terminate the payload.
  **/
 static int
@@ -56,14 +98,14 @@ payload_terminate(int status) {
   void (*exit)(int) = 0;
 
   // we are running inside a hijacked process, just return
-  if(!DYNLIB_DLSYM(0x2001, "_exit", &exit)) {
+  if(!__crt_syscall(SYS_sprx_dlsym, 0x2001, "_exit", &exit)) {
     return status;
   }
 
   // resolve and run exit, which flushes stdio and runs the atexit handlers,
   // or _exit if libc does not have it
-  if(!DYNLIB_DLSYM(0x2, "exit", &exit) ||
-     !DYNLIB_DLSYM(0x1, "_exit", &exit)) {
+  if(!__crt_syscall(SYS_sprx_dlsym, 0x2, "exit", &exit) ||
+     !__crt_syscall(SYS_sprx_dlsym, 0x1, "_exit", &exit)) {
     exit(status);
   }
 
@@ -220,7 +262,7 @@ payload_init(void) {
   }
 
   // a payload is free to start threads, so libc has to lock its streams
-  if(!DYNLIB_DLSYM(0x2, "__isthreaded", &__isthreaded)) {
+  if(!__crt_syscall(SYS_sprx_dlsym, 0x2, "__isthreaded", &__isthreaded)) {
     *__isthreaded = 1;
   } else {
     klog_puts("Unable to resolve the symbol '__isthreaded'");
@@ -274,7 +316,7 @@ __crt_start(void) {
   }
 
   // without a syscall function there is nothing left to do but to return
-  if((err=__crt_syscall_init())) {
+  if((err=payload_syscall_init())) {
     return err;
   }
 
@@ -284,14 +326,14 @@ __crt_start(void) {
   }
 
   // get argc, argv, and envp
-  if(DYNLIB_DLSYM(0x2001, "getargc", &getargc)) {
-    DYNLIB_DLSYM(0x1, "getargc", &getargc);
+  if(__crt_syscall(SYS_sprx_dlsym, 0x2001, "getargc", &getargc)) {
+    __crt_syscall(SYS_sprx_dlsym, 0x1, "getargc", &getargc);
   }
-  if(DYNLIB_DLSYM(0x2001, "getargv", &getargv)) {
-    DYNLIB_DLSYM(0x1, "getargv", &getargv);
+  if(__crt_syscall(SYS_sprx_dlsym, 0x2001, "getargv", &getargv)) {
+    __crt_syscall(SYS_sprx_dlsym, 0x1, "getargv", &getargv);
   }
-  if(DYNLIB_DLSYM(0x2001, "environ", &envp)) {
-    DYNLIB_DLSYM(0x1, "environ", &envp);
+  if(__crt_syscall(SYS_sprx_dlsym, 0x2001, "environ", &envp)) {
+    __crt_syscall(SYS_sprx_dlsym, 0x1, "environ", &envp);
   }
   if(getargc && getargv) {
     argc = getargc();

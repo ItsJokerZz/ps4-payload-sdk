@@ -86,17 +86,17 @@ int
 __klog_init(void) {
   int err;
 
-  if((err=DYNLIB_DLSYM(0x2, "snprintf", &snprintf))) {
+  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2, "snprintf", &snprintf))) {
     return err;
   }
-  if((err=DYNLIB_DLSYM(0x2, "strerror", &strerror))) {
+  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2, "strerror", &strerror))) {
     return err;
   }
-  if((err=DYNLIB_DLSYM(0x2, "vsnprintf", &vsnprintf))) {
+  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2, "vsnprintf", &vsnprintf))) {
     return err;
   }
-  if((err=DYNLIB_DLSYM(0x2001, "__error", &__error))) {
-    if((err=DYNLIB_DLSYM(0x1, "__error", &__error))) {
+  if((err=__crt_syscall(SYS_sprx_dlsym, 0x2001, "__error", &__error))) {
+    if((err=__crt_syscall(SYS_sprx_dlsym, 0x1, "__error", &__error))) {
       return err;
     }
   }

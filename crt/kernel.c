@@ -24,6 +24,7 @@ along with this program; see the file COPYING. If not, see
  **/
 #define X86_CR0_WP (1 << 16)
 #define MSR_LSTAR  0xC0000082
+#define SYS_kexec  11
 
 #define EFAULT     14
 #define EINVAL     22
