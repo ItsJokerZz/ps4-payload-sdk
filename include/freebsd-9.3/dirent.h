@@ -72,8 +72,6 @@ typedef struct _dirdesc {
 	struct _telldir *dd_td;	/* telldir position recording */
 } DIR;
 
-#define	dirfd(dirp)	((dirp)->dd_fd)
-
 /* flags for opendir2 */
 #define DTF_HIDEW	0x0001	/* hide whiteout entries */
 #define DTF_NODUP	0x0002	/* don't return duplicate names */
@@ -91,6 +89,7 @@ typedef	void *	DIR;
 __BEGIN_DECLS
 #if __POSIX_VISIBLE >= 200809 || __XSI_VISIBLE >= 700
 int	 alphasort(const struct dirent **, const struct dirent **);
+int	 dirfd(DIR *);
 #endif
 #if __BSD_VISIBLE
 DIR	*__opendir2(const char *, int);
