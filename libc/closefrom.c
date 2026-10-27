@@ -16,10 +16,23 @@ along with this program; see the file COPYING. If not, see
 
 #include <unistd.h>
 
-#include <sys/syscall.h>
 
-
+/**
+ * The kernels of the PS4 and the PS5 answer ENOSYS to the closefrom system
+ * call, so close the descriptors one by one.
+ **/
 void
 closefrom(int lowfd) {
-  syscall(SYS_closefrom, lowfd);
+  int maxfd = getdtablesize();
+
+  if(lowfd < 0) {
+    lowfd = 0;
+  }
+  if(maxfd <= 0) {
+    maxfd = 1024;
+  }
+
+  for(int fd=lowfd; fd<maxfd; fd++) {
+    close(fd);
+  }
 }
