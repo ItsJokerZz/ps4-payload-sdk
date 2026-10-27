@@ -17,7 +17,7 @@
 include Makefile.inc
 
 TOPTARGETS := all clean install
-SUBDIRS    := crt include libc libufs sce_stubs host
+SUBDIRS    := crt sce_stubs libc libufs include host
 
 ifdef WIN
 	SUBDIRS += host/win
