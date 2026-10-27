@@ -2124,5 +2124,10 @@ kernel_set_vmem_protection(int pid, unsigned long addr, unsigned long len, int p
 
 int
 kernel_mprotect(int pid, unsigned long addr, unsigned long len, int prot) {
+  // a process can change the protection of its own memory without the kernel's help
+  if(pid == -1 || pid == __syscall(SYS_getpid)) {
+    return (int)__syscall(SYS_mprotect, addr, len, prot);
+  }
+
   return kernel_set_vmem_protection(pid, addr, len, prot);
 }

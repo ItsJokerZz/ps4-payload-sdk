@@ -17,10 +17,6 @@ along with this program; see the file COPYING. If not, see
 #pragma once
 
 
-/**
- * The args the loader passes to the payload. The PS5 loader hands over a
- * pointer to this, the PS4 loader does not, see payload_get_args().
- **/
 typedef struct payload_args {
   int (*sys_dynlib_dlsym)(int, const char*, void*);
   int  *rwpipe;

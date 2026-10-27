@@ -15,7 +15,6 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include "kernel.h"
-#include "klog.h"
 #include "syscall.h"
 #include "rtld.h"
 #include "rtld_dlfcn.h"
@@ -159,6 +158,8 @@ __rtld_lib_soname2lib(rtld_lib_t* ctx, const char *soname) {
 
 int
 __rtld_find_file(const char *name, char* path) {
+  unsigned long random_word_len = 0xff;
+  char random_word[0xff];
   unsigned long off = 0;
   const char *ldpaths;
   char buf[0x100];
@@ -171,30 +172,52 @@ __rtld_find_file(const char *name, char* path) {
 
   path[0] = 0;
   if(name[0] == '/') {
-    if(!(err=__syscall(SYS_stat, name, buf))) {
+    if(!(err=__crt_syscall(SYS_stat, name, buf))) {
       strcpy(path, name);
     }
     return err;
   }
 
   sprintf(path, "/system/priv/lib/%s", name);
-  if(!__syscall(SYS_stat, path, buf)) {
+  if(!__crt_syscall(SYS_stat, path, buf)) {
     return 0;
   }
 
   sprintf(path, "/system/common/lib/%s", name);
-  if(!__syscall(SYS_stat, path, buf)) {
+  if(!__crt_syscall(SYS_stat, path, buf)) {
     return 0;
   }
 
   sprintf(path, "/system_ex/priv_ex/lib/%s", name);
-  if(!__syscall(SYS_stat, path, buf)) {
+  if(!__crt_syscall(SYS_stat, path, buf)) {
     return 0;
   }
 
   sprintf(path, "/system_ex/common_ex/lib/%s", name);
-  if(!__syscall(SYS_stat, path, buf)) {
+  if(!__crt_syscall(SYS_stat, path, buf)) {
     return 0;
+  }
+
+  if(!__crt_syscall(SYS_randomized_path, 0, &random_word, &random_word_len)) {
+    sprintf(path, "/%s/priv/lib/%s", random_word, name);
+    if(!__crt_syscall(SYS_stat, path, buf)) {
+      return 0;
+    }
+
+    sprintf(path, "/%s/common/lib/%s", random_word, name);
+    if(!__crt_syscall(SYS_stat, path, buf)) {
+      return 0;
+    }
+
+    sprintf(path, "/%s/priv_ex/lib/%s", random_word, name);
+    if(!__crt_syscall(SYS_stat, path, buf)) {
+      return 0;
+    }
+
+    sprintf(path, "/%s/common_ex/lib/%s", random_word, name);
+    if(!__crt_syscall(SYS_stat, path, buf)) {
+      return 0;
+    }
   }
 
   if((ldpaths=getenv("LD_LIBRARY_PATH"))) {
@@ -205,7 +228,7 @@ __rtld_find_file(const char *name, char* path) {
 	path[off+1] = 0;
 	strcat(path, name);
 	off = 0;
-	if(!__syscall(SYS_stat, path, buf)) {
+	if(!__crt_syscall(SYS_stat, path, buf)) {
 	  return 0;
 	}
       }
@@ -213,13 +236,13 @@ __rtld_find_file(const char *name, char* path) {
   }
 
   sprintf(path, "/user/homebrew/lib/%s", name);
-  if(!__syscall(SYS_stat, path, buf)) {
+  if(!__crt_syscall(SYS_stat, path, buf)) {
     return 0;
   }
 
-  if(! __syscall(SYS___getcwd, cwd, sizeof(cwd))) {
+  if(! __crt_syscall(SYS___getcwd, cwd, sizeof(cwd))) {
     sprintf(path, "%s/%s", cwd, name);
-    if(!__syscall(SYS_stat, path, buf)) {
+    if(!__crt_syscall(SYS_stat, path, buf)) {
       return 0;
     }
   }
@@ -503,31 +526,31 @@ int
 __rtld_init(void) {
   int err;
 
-  if(!RTLD_DLSYM(0x2, strcpy)) {
+  if(!KERNEL_DLSYM(0x2, strcpy)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, strcat)) {
+  if(!KERNEL_DLSYM(0x2, strcat)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, strcmp)) {
+  if(!KERNEL_DLSYM(0x2, strcmp)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, strncmp)) {
+  if(!KERNEL_DLSYM(0x2, strncmp)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, strlen)) {
+  if(!KERNEL_DLSYM(0x2, strlen)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, sprintf)) {
+  if(!KERNEL_DLSYM(0x2, sprintf)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, calloc)) {
+  if(!KERNEL_DLSYM(0x2, calloc)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, free)) {
+  if(!KERNEL_DLSYM(0x2, free)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, getenv)) {
+  if(!KERNEL_DLSYM(0x2, getenv)) {
     return -1;
   }
 
@@ -547,53 +570,3 @@ __rtld_init(void) {
   return 0;
 }
 
-
-
-int
-__rtld_sandbox_leave(rtld_sandbox_t* state) {
-  int err;
-
-  if(!(state->prison=kernel_get_ucred_prison(-1))) {
-    klog_puts("kernel_get_ucred_prison failed");
-    return -1;
-  }
-  if(!(state->rootdir=kernel_get_proc_rootdir(-1))) {
-    klog_puts("kernel_get_proc_rootdir failed");
-    return -1;
-  }
-  if(!(state->jaildir=kernel_get_proc_jaildir(-1))) {
-    klog_puts("kernel_get_proc_jaildir failed");
-    return -1;
-  }
-
-  if((err=kernel_set_proc_rootdir(-1, KERNEL_ADDRESS_ROOTVNODE))) {
-    klog_puts("kernel_set_proc_rootdir failed");
-  } else if((err=kernel_set_proc_jaildir(-1, KERNEL_ADDRESS_ROOTVNODE))) {
-    klog_puts("kernel_set_proc_jaildir failed");
-  } else if((err=kernel_set_ucred_prison(-1, KERNEL_ADDRESS_PRISON0))) {
-    klog_puts("kernel_set_ucred_prison failed");
-  }
-
-  return err;
-}
-
-
-int
-__rtld_sandbox_restore(rtld_sandbox_t* state) {
-  int err = 0;
-
-  if(kernel_set_proc_rootdir(-1, state->rootdir)) {
-    klog_puts("kernel_set_proc_rootdir failed");
-    err = -1;
-  }
-  if(kernel_set_proc_jaildir(-1, state->jaildir)) {
-    klog_puts("kernel_set_proc_jaildir failed");
-    err = -1;
-  }
-  if(kernel_set_ucred_prison(-1, state->prison)) {
-    klog_puts("kernel_set_ucred_prison failed");
-    err = -1;
-  }
-
-  return err;
-}
