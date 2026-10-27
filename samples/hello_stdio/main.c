@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 John Törnblom
+/* Copyright (C) 2023 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -16,9 +16,7 @@ along with this program; see the file COPYING. If not, see
 
 #include <stdio.h>
 
-
-int
-main() {
+int main() {
   char buf[255] = "anonymous";
 
   fprintf(stdout, "enter name\n");
@@ -29,4 +27,3 @@ main() {
 
   return 0;
 }
-
