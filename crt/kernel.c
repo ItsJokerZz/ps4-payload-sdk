@@ -596,7 +596,7 @@ kernel_get_fw_version(void) {
 
 
 int
-__kernel_init(void) {
+__kernel_init(payload_args_t* args) {
   unsigned int fw = kernel_get_fw_version();
   unsigned long lstar = 0;
   unsigned long addr = 0;
@@ -2126,4 +2126,49 @@ kernel_mprotect(int pid, unsigned long addr, unsigned long len, int prot) {
   }
 
   return kernel_set_vmem_protection(pid, addr, len, prot);
+}
+
+
+extern int __real___crt_start(payload_args_t* args);
+
+
+/**
+ * Resolve a symbol with a syscall instruction of our own.
+ **/
+static int
+kernel_dlsym_raw(int handle, const char* name, void* addr) {
+  register long r10 asm("r10") = 0;
+  register long r8  asm("r8")  = 0;
+  register long r9  asm("r9")  = 0;
+  unsigned long ret;
+  char err;
+
+  asm("syscall"
+      : "=a"(ret), "=@ccc"(err), "+r"(r10), "+r"(r8), "+r"(r9)
+      : "a"(SYS_sprx_dlsym), "D"((long)handle), "S"(name), "d"(addr)
+      : "rcx", "r11", "memory");
+
+  return (int)(err ? -ret : ret);
+}
+
+
+/**
+ * Entry-point invoked by _start, the PS4 loader does not pass any args.
+ **/
+int
+__wrap___crt_start(void) {
+  int exit_code = 0;
+  payload_args_t args = {
+    .payloadout = &exit_code
+  };
+
+  if(kernel_dlsym_raw(0x1, "sceKernelDlsym", &args.sys_dynlib_dlsym)) {
+    if(kernel_dlsym_raw(0x2001, "sceKernelDlsym", &args.sys_dynlib_dlsym)) {
+      return -1;
+    }
+  }
+
+  __real___crt_start(&args);
+
+  return exit_code;
 }
