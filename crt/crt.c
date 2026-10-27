@@ -17,6 +17,7 @@ along with this program; see the file COPYING. If not, see
 #include "kernel.h"
 #include "klog.h"
 #include "patch.h"
+#include "payload.h"
 #include "rtld.h"
 #include "rtld_dlfcn.h"
 #include "rtld_payload.h"
@@ -37,9 +38,14 @@ extern int main(int argc, char* argv[], char *envp[]);
 
 
 /**
- * The payload and the libraries it depends on.
+ * The payload and the libraries it depends on, the args passed to _start
+ * (the PS4 loader passes none), the exit code, and the cpu state to go back
+ * to when the payload exits.
  **/
 static rtld_lib_t* g_payload = 0;
+static payload_args_t* payload_args = 0;
+static int g_exit_code = 0;
+static void* jmpbuf[32];
 
 
 /**
@@ -47,16 +53,18 @@ static rtld_lib_t* g_payload = 0;
  **/
 static int
 payload_terminate(int status) {
-  void (*_exit)(int) = 0;
+  void (*exit)(int) = 0;
 
   // we are running inside a hijacked process, just return
-  if(!DYNLIB_DLSYM(0x2001, "_exit", &_exit)) {
+  if(!DYNLIB_DLSYM(0x2001, "_exit", &exit)) {
     return status;
   }
 
-  // resolve and run _exit
-  if(!DYNLIB_DLSYM(0x1, "_exit", &_exit)) {
-    _exit(status);
+  // resolve and run exit, which flushes stdio and runs the atexit handlers,
+  // or _exit if libc does not have it
+  if(!DYNLIB_DLSYM(0x2, "exit", &exit) ||
+     !DYNLIB_DLSYM(0x1, "_exit", &exit)) {
+    exit(status);
   }
 
   // should not happend
@@ -106,6 +114,7 @@ payload_link(void) {
  **/
 static int
 payload_init(void) {
+  int *__isthreaded = 0;
   int err = 0;
 
   if((err=__klog_init())) {
@@ -114,6 +123,14 @@ payload_init(void) {
   if((err=__kernel_init())) {
     return err;
   }
+
+  // a payload is free to start threads, so libc has to lock its streams
+  if(!DYNLIB_DLSYM(0x2, "__isthreaded", &__isthreaded)) {
+    *__isthreaded = 1;
+  } else {
+    klog_puts("Unable to resolve the symbol '__isthreaded'");
+  }
+
   if((err=payload_link())) {
     return err;
   }
@@ -125,12 +142,30 @@ payload_init(void) {
 }
 
 
+/**
+ * Exit the payload by transfering the flow of control back to __crt_start().
+ **/
+void
+payload_exit(int exit_code) {
+  g_exit_code = exit_code;
+  __builtin_longjmp(jmpbuf, 1);
+}
+
 
 /**
- * Entry-point invoked by the ELF loader.
+ * Provide a convenience function for accessing the payload args.
+ **/
+payload_args_t*
+payload_get_args(void) {
+  return payload_args;
+}
+
+
+/**
+ * Entry-point invoked by _start.
  **/
 int
-_start(void) {
+__crt_start(void) {
   char** (*getargv)(void) = 0;
   int (*getargc)(void) = 0;
   char** envp = 0;
@@ -163,17 +198,19 @@ _start(void) {
     argv = getargv();
   }
 
-  // Run .init functions
-  if((err=__rtld_lib_init(g_payload, argc, argv, envp))) {
-    return payload_terminate(err);
+  // run the payload, payload_exit() ends up here with the exit code set
+  if(!__builtin_setjmp(jmpbuf)) {
+    // Run .init functions
+    if((err=__rtld_lib_init(g_payload, argc, argv, envp))) {
+      g_exit_code = err;
+    } else {
+      g_exit_code = main(argc, argv, envp);
+
+      // Run .fini functions. The libraries are left loaded, as they always
+      // were, since the process may live on after the payload returns.
+      __rtld_lib_fini(g_payload);
+    }
   }
 
-  // Run the payload
-  err = main(argc, argv, envp);
-
-  // Run .fini functions. The libraries are left loaded, as they always were,
-  // since the process may live on after the payload returns.
-  __rtld_lib_fini(g_payload);
-
-  return payload_terminate(err);
+  return payload_terminate(g_exit_code);
 }
