@@ -15,6 +15,8 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <sys/syscall.h>
@@ -22,10 +24,32 @@ along with this program; see the file COPYING. If not, see
 
 char*
 getcwd(char* buf, size_t size) {
+  char* tmp = 0;
   int err;
 
+  if(buf) {
+    if(!size) {
+      errno = EINVAL;
+      return 0;
+    }
+
+    if(size == 1) {
+      errno = ERANGE;
+      return 0;
+    }
+  } else {
+    if(!size) {
+      size = PATH_MAX;
+    }
+
+    if(!(buf=tmp=malloc(size))) {
+      return 0;
+    }
+  }
+
   if((err=syscall(SYS___getcwd, buf, size))) {
-    errno = -err;
+    errno = err == -ENOMEM ? ERANGE : -err;
+    free(tmp);
     return 0;
   }
 
