@@ -16,14 +16,7 @@ along with this program; see the file COPYING. If not, see
 
 #pragma once
 
-#include "syscall.h"
-
-
-/**
- * Resolve a symbol from a system module into a variable of the same name.
- * True when it was found.
- **/
-#define RTLD_DLSYM(handle, sym) (!DYNLIB_DLSYM(handle, #sym, &sym))
+#include "payload.h"
 
 
 /**
@@ -153,16 +146,3 @@ int __rtld_init(void);
  **/
 int __rtld_find_file(const char *name, char* path);
 
-
-/**
- * The payload starts out in a sandbox that cannot see the system libraries.
- * Leave it for as long as the libraries are being loaded, and go back after.
- **/
-typedef struct rtld_sandbox {
-  unsigned long prison;
-  unsigned long rootdir;
-  unsigned long jaildir;
-} rtld_sandbox_t;
-
-int __rtld_sandbox_leave(rtld_sandbox_t* state);
-int __rtld_sandbox_restore(rtld_sandbox_t* state);

@@ -44,7 +44,7 @@ along with this program; see the file COPYING. If not, see
 /**
  * Dependencies to standard libraries.
  **/
-static char* (*strerror)(int) = 0;
+static char* (*_Strerror)(int, char*) = 0;
 static void* (*calloc)(unsigned long, unsigned long) = 0;
 static void (*free)(void*) = 0;
 static char** (*getargv)(void) = 0;
@@ -180,7 +180,7 @@ __dlclose(void *handle) {
 char*
 __dlerror(void) {
   if(g_dlerrno) {
-    return strerror(g_dlerrno);
+    return _Strerror(g_dlerrno, 0);
   }
 
   return 0;
@@ -194,28 +194,28 @@ void __rtld_dlfcn_setroot(rtld_lib_t *lib) {
 
 int
 __rtld_dlfcn_init(void) {
-  if(!RTLD_DLSYM(0x2, calloc)) {
+  if(!KERNEL_DLSYM(0x2, calloc)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, free)) {
+  if(!KERNEL_DLSYM(0x2, free)) {
     return -1;
   }
-  if(!RTLD_DLSYM(0x2, strerror)) {
+  if(!KERNEL_DLSYM(0x2, _Strerror)) {
     return -1;
   }
 
-  if(!RTLD_DLSYM(0x1, getargc)) {
-    if(!RTLD_DLSYM(0x2001, getargc)) {
+  if(!KERNEL_DLSYM(0x1, getargc)) {
+    if(!KERNEL_DLSYM(0x2001, getargc)) {
       return -1;
     }
   }
-  if(!RTLD_DLSYM(0x1, getargv)) {
-    if(!RTLD_DLSYM(0x2001, getargv)) {
+  if(!KERNEL_DLSYM(0x1, getargv)) {
+    if(!KERNEL_DLSYM(0x2001, getargv)) {
       return -1;
     }
   }
-  if(!RTLD_DLSYM(0x1, environ)) {
-    if(!RTLD_DLSYM(0x2001, environ)) {
+  if(!KERNEL_DLSYM(0x1, environ)) {
+    if(!KERNEL_DLSYM(0x2001, environ)) {
       return -1;
     }
   }

@@ -75,15 +75,106 @@ payload_terminate(int status) {
 
 
 /**
+ * The payload starts out in a sandbox that cannot see the system libraries.
+ * Leave it for as long as the libraries are being loaded, and go back after.
+ **/
+typedef struct payload_sandbox {
+  unsigned long prison;
+  unsigned long rootdir;
+  unsigned long jaildir;
+} payload_sandbox_t;
+
+
+/**
+ * Go back to the sandbox the payload started in.
+ **/
+static int
+payload_sandbox_restore(payload_sandbox_t* state) {
+  int err = 0;
+
+  if(kernel_set_proc_rootdir(-1, state->rootdir)) {
+    klog_puts("kernel_set_proc_rootdir failed");
+    err = -1;
+  }
+  if(kernel_set_proc_jaildir(-1, state->jaildir)) {
+    klog_puts("kernel_set_proc_jaildir failed");
+    err = -1;
+  }
+  if(kernel_set_ucred_prison(-1, state->prison)) {
+    klog_puts("kernel_set_ucred_prison failed");
+    err = -1;
+  }
+
+  return err;
+}
+
+
+/**
+ * Leave the sandbox. When that fails, the sandbox is left as it was found.
+ **/
+static int
+payload_sandbox_leave(payload_sandbox_t* state) {
+  if(!(state->prison=kernel_get_ucred_prison(-1))) {
+    klog_puts("kernel_get_ucred_prison failed");
+    return -1;
+  }
+  if(!(state->rootdir=kernel_get_proc_rootdir(-1))) {
+    klog_puts("kernel_get_proc_rootdir failed");
+    return -1;
+  }
+  if(!(state->jaildir=kernel_get_proc_jaildir(-1))) {
+    klog_puts("kernel_get_proc_jaildir failed");
+    return -1;
+  }
+
+  if(kernel_set_proc_rootdir(-1, KERNEL_ADDRESS_ROOTVNODE)) {
+    klog_puts("kernel_set_proc_rootdir failed");
+  } else if(kernel_set_proc_jaildir(-1, KERNEL_ADDRESS_ROOTVNODE)) {
+    klog_puts("kernel_set_proc_jaildir failed");
+  } else if(kernel_set_ucred_prison(-1, KERNEL_ADDRESS_PRISON0)) {
+    klog_puts("kernel_set_ucred_prison failed");
+  } else {
+    return 0;
+  }
+
+  payload_sandbox_restore(state);
+
+  return -1;
+}
+
+
+/**
+ * Load a library as a dependency of the payload before the ones the payload
+ * asks for, since symbols are searched for in the order the libraries are
+ * added.
+ **/
+static int
+payload_preload(rtld_lib_t* payload, const char* soname) {
+  rtld_lib_t* lib;
+
+  if(!(lib=__rtld_lib_new(payload, soname))) {
+    klog_printf("Unable to load %s\n", soname);
+    return -1;
+  }
+  if(__rtld_lib_open(lib) < 0) {
+    klog_printf("unable to load '%s'\n", soname);
+    __rtld_lib_destroy(lib);
+    return -1;
+  }
+
+  return __rtld_lib_append_dep(payload, lib);
+}
+
+
+/**
  * Load the libraries the payload depends on, and link the payload.
  **/
 static int
 payload_link(void) {
-  rtld_sandbox_t sandbox;
+  payload_sandbox_t sandbox;
   int err;
 
-  if((err=__rtld_sandbox_leave(&sandbox))) {
-    __rtld_sandbox_restore(&sandbox);
+  if((err=payload_sandbox_leave(&sandbox))) {
     return err;
   }
 
@@ -95,13 +186,17 @@ payload_link(void) {
   }
   else {
     __rtld_dlfcn_setroot(g_payload);
-    if((err=__rtld_lib_open(g_payload))) {
+
+    // symbols are looked up in libkernel first and then in libc
+    if((err=payload_preload(g_payload, "libkernel.sprx")) ||
+       (err=payload_preload(g_payload, "libSceLibcInternal.sprx")) ||
+       (err=__rtld_lib_open(g_payload))) {
       __rtld_lib_destroy(g_payload);
       g_payload = 0;
     }
   }
 
-  if(__rtld_sandbox_restore(&sandbox)) {
+  if(payload_sandbox_restore(&sandbox)) {
     err = -1;
   }
 
