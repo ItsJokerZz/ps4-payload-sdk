@@ -103,6 +103,7 @@ extern const off_t KERNEL_OFFSET_UCRED_CR_SCECAPS;
 extern const off_t KERNEL_OFFSET_UCRED_CR_SCEATTRS;
 
 // struct filedesc field offsets
+extern const off_t KERNEL_OFFSET_FILEDESC_FD_CDIR;
 extern const off_t KERNEL_OFFSET_FILEDESC_FD_RDIR;
 extern const off_t KERNEL_OFFSET_FILEDESC_FD_JDIR;
 
