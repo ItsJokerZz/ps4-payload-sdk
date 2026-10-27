@@ -41,6 +41,7 @@ jobs:
           $MAKE -C samples/hello_cxx
           $MAKE -C samples/hello_cxx23
           $MAKE -C samples/hello_dlfcn
+          $MAKE -C samples/hello_kenv
           $MAKE -C samples/hello_sprx
           $MAKE -C samples/hello_stdio
           $MAKE -C samples/hello_world
