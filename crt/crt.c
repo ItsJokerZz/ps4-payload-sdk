@@ -18,18 +18,14 @@ along with this program; see the file COPYING. If not, see
 #include "klog.h"
 #include "patch.h"
 #include "rtld.h"
+#include "rtld_dlfcn.h"
+#include "rtld_payload.h"
 #include "syscall.h"
 
 
 /**
  * Dependencies provided by the ELF linker.
  **/
-extern void (*__init_array_start[])(int, char**, char**) __attribute__((weak));
-extern void (*__init_array_end[])(int, char**, char**) __attribute__((weak));
-
-extern void (*__fini_array_start[])(void) __attribute__((weak));
-extern void (*__fini_array_end[])(void) __attribute__((weak));
-
 extern unsigned char __bss_start[] __attribute__((weak));
 extern unsigned char __bss_end[] __attribute__((weak));
 
@@ -38,6 +34,12 @@ extern unsigned char __bss_end[] __attribute__((weak));
  * Entry point to the main program.
  **/
 extern int main(int argc, char* argv[], char *envp[]);
+
+
+/**
+ * The payload and the libraries it depends on.
+ **/
+static rtld_lib_t* g_payload = 0;
 
 
 /**
@@ -65,6 +67,41 @@ payload_terminate(int status) {
 
 
 /**
+ * Load the libraries the payload depends on, and link the payload.
+ **/
+static int
+payload_link(void) {
+  rtld_sandbox_t sandbox;
+  int err;
+
+  if((err=__rtld_sandbox_leave(&sandbox))) {
+    __rtld_sandbox_restore(&sandbox);
+    return err;
+  }
+
+  if((err=__rtld_init())) {
+    klog_puts("Unable to initialize rtld");
+  }
+  else if(!(g_payload=__rtld_payload_new(""))) {
+    err = -1;
+  }
+  else {
+    __rtld_dlfcn_setroot(g_payload);
+    if((err=__rtld_lib_open(g_payload))) {
+      __rtld_lib_destroy(g_payload);
+      g_payload = 0;
+    }
+  }
+
+  if(__rtld_sandbox_restore(&sandbox)) {
+    err = -1;
+  }
+
+  return err;
+}
+
+
+/**
  * Initialize the payload.
  **/
 static int
@@ -77,7 +114,7 @@ payload_init(void) {
   if((err=__kernel_init())) {
     return err;
   }
-  if((err=__rtld_init())) {
+  if((err=payload_link())) {
     return err;
   }
   if((err=__patch_init())) {
@@ -96,7 +133,6 @@ int
 _start(void) {
   char** (*getargv)(void) = 0;
   int (*getargc)(void) = 0;
-  unsigned long count = 0;
   char** envp = 0;
   char** argv = 0;
   int argc = 0;
@@ -128,19 +164,16 @@ _start(void) {
   }
 
   // Run .init functions
-  count = __init_array_end - __init_array_start;
-  for(int i=0; i<count; i++) {
-    __init_array_start[i](argc, argv, envp);
+  if((err=__rtld_lib_init(g_payload, argc, argv, envp))) {
+    return payload_terminate(err);
   }
 
   // Run the payload
   err = main(argc, argv, envp);
 
-  // Run .fini functions
-  count = __fini_array_end - __fini_array_start;
-  for(int i=0; i<count; i++) {
-    __fini_array_start[count-i-1]();
-  }
+  // Run .fini functions. The libraries are left loaded, as they always were,
+  // since the process may live on after the payload returns.
+  __rtld_lib_fini(g_payload);
 
   return payload_terminate(err);
 }

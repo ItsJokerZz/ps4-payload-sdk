@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 John Törnblom
+/* Copyright (C) 2024 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -17,130 +17,165 @@ along with this program; see the file COPYING. If not, see
 #include "kernel.h"
 #include "klog.h"
 #include "syscall.h"
-
-
-#define ELF64_R_SYM(info) ((info) >> 32)
-#define ELF64_ST_BIND(info) ((info) >> 4)
-
-#define STB_WEAK 2
-
-#define DT_NULL     0
-#define DT_NEEDED   1
-#define DT_PLTRELSZ 2
-#define DT_STRTAB   5
-#define DT_SYMTAB   6
-#define DT_RELA     7
-#define DT_RELASZ   8
-#define DT_JMPREL   23
-
-#define R_X86_64_64       1
-#define R_X86_64_GLOB_DAT 6
-#define R_X86_64_JMP_SLOT 7
-#define R_X86_64_RELATIVE 8
-
-#define RTLD_LAZY     0x0001
-#define RTLD_NOW      0x0002
-#define RTLD_MODEMASK 0x0003
-#define RTLD_GLOBAL   0x0100
-#define RTLD_LOCAL    0x0000
-#define RTLD_TRACE    0x0200
-#define RTLD_NODELETE 0x1000
-#define RTLD_NOLOAD   0x2000
-
-#define ENOENT 2
-#define EINVAL 22
-#define ENOSYS 78
-
-
-typedef struct {
-  long d_tag;
-  union {
-    unsigned long d_val;
-    unsigned long d_ptr;
-  } d_un;
-} Elf64_Dyn;
-
-
-typedef struct {
-  unsigned int   st_name;
-  unsigned char  st_info;
-  unsigned char  st_other;
-  unsigned short st_shndx;
-  unsigned long  st_value;
-  unsigned long  st_size;
-} Elf64_Sym;
-
-
-typedef struct {
-  unsigned long r_offset;
-  unsigned long r_info;
-  long          r_addend;
-} Elf64_Rela;
+#include "rtld.h"
+#include "rtld_dlfcn.h"
+#include "rtld_payload.h"
+#include "rtld_so.h"
+#include "rtld_sprx.h"
 
 
 /**
- * dependencies provided by the ELF linker.
+ * Dependencies to standard libraries.
  **/
-extern unsigned char __image_start[] __attribute__((weak));
-extern Elf64_Dyn _DYNAMIC[] __attribute__((weak));
+static char* (*strcpy)(char*, const char*) = 0;
+static int (*strcmp)(const char*, const char*) = 0;
+static int (*strncmp)(const char*, const char*, unsigned long) = 0;
+static unsigned long (*strlen)(const char*) = 0;
+static char* (*strcat)(char*, const char*) = 0;
+static int (*sprintf)(char*, const char*, ...) = 0;
+
+static char* (*getenv)(const char*) = 0;
+
+static void* (*calloc)(unsigned long, unsigned long) = 0;
+static void (*free)(void*) = 0;
 
 
 /**
- * global private variables.
+ * Extend the rtld_lib_t type with auxiliary parameters for shallow
+ * copies of a lib. This requires -fms-extensions.
  **/
-static unsigned int g_libkernel_handle = 1;
-static unsigned int g_handles[0x1000];
-static int g_nb_handles = 0;
+typedef struct rtld_ref_lib {
+  struct rtld_lib;
+
+  rtld_lib_t* ref;
+} rtld_ref_lib_t;
 
 
 /**
- * external dependencies.
+ * Check if a string ends with a given suffix.
  **/
-static void* (*memcpy)(void*, const void*, unsigned long) = 0;
-static int   (*strcmp)(const char*, const char*) = 0;
-static int   (*sprintf)(char*, const char*, ...) = 0;
-static int   (*sceSysmoduleLoadModuleInternal)(unsigned int) = 0;
-static int   (*sceKernelLoadStartModule)(const char*, unsigned long, const void*,
-					 unsigned int, void*, int*) = 0;
-
-
-/**
- * Lookup table for sceSysmoduleLoadModuleInternal().
- **/
-static struct sysmodtab {
-  const char* name;
-  unsigned int handle;
-} sysmodtab[] = {
-  {"libSceAppInstUtil.sprx", 0x80000014},
-  {"libSceNet.sprx", 0x8000001c},
-  {"libSceHttp.sprx", 0x8000000a},
-  {"libSceSsl.sprx", 0x8000000b},
-  {"libSceSystemService.sprx", 0x80000010},
-  {"libSceUserService.sprx", 0x80000011},
-};
-
-
-/**
- * Log a symbol resolution error to /dev/klog
- **/
-static void
-klog_resolve_error(const char *name) {
-  klog_printf("Unable to resolve the symbol '%s'\n", name);
-}
-
-
-/**
- * Log a library loading error to /dev/klog
- **/
-static void
-klog_libload_error(const char *name) {
-  klog_printf("Unable to load the library '%s'\n", name);
-}
-
-
 static int
-sprx_find_file(const char *name, char* path) {
-  char buf[0x1000];
+endswith(const char *string, const char* suffix) {
+  unsigned long suffix_len = strlen(suffix);
+  unsigned long string_len = strlen(string);
+
+  if(string_len < suffix_len) {
+    return 0;
+  }
+
+  return strncmp(string + string_len - suffix_len,
+                 suffix, suffix_len) == 0;
+}
+
+
+/**
+ *
+ **/
+static int
+ref_open(rtld_lib_t* ctx) {
+  rtld_ref_lib_t* lib = (rtld_ref_lib_t*)ctx;
+  return __rtld_lib_open(lib->ref);
+}
+
+
+/**
+ *
+ **/
+static int
+ref_init(rtld_lib_t* ctx, int argc, char** argv, char** envp) {
+  return 0;
+}
+
+
+/**
+ *
+ **/
+static void*
+ref_sym2addr(rtld_lib_t* ctx, const char* name) {
+  rtld_ref_lib_t* lib = (rtld_ref_lib_t*)ctx;
+  return __rtld_lib_sym2addr(lib->ref, name);
+}
+
+
+/**
+ *
+ **/
+static const char*
+ref_addr2sym(rtld_lib_t* ctx, void* addr) {
+  rtld_ref_lib_t* lib = (rtld_ref_lib_t*)ctx;
+  return __rtld_lib_addr2sym(lib->ref, addr);
+}
+
+
+/**
+ *
+ **/
+static int
+ref_fini(rtld_lib_t* ctx) {
+  return 0;
+}
+
+
+/**
+ *
+ **/
+static int
+ref_close(rtld_lib_t* ctx) {
+  rtld_ref_lib_t* lib = (rtld_ref_lib_t*)ctx;
+  return __rtld_lib_close(lib->ref);
+}
+
+
+/**
+ *
+ **/
+static void
+ref_destroy(rtld_lib_t* ctx) {
+  free(ctx);
+}
+
+
+static rtld_lib_t*
+__rtld_lib_soname2lib(rtld_lib_t* ctx, const char *soname) {
+  rtld_lib_t* lib;
+
+  if(!ctx) {
+    return 0;
+  }
+
+  if(!strcmp(ctx->soname, soname)) {
+    return ctx;
+  }
+
+  for(rtld_lib_seq_t* it=ctx->children.head; it; it=it->next) {
+    if((lib=__rtld_lib_soname2lib(it->lib, soname))) {
+      return lib;
+    }
+  }
+
+  return 0;
+}
+
+
+int
+__rtld_find_file(const char *name, char* path) {
+  unsigned long off = 0;
+  const char *ldpaths;
+  char buf[0x100];
+  char cwd[1024];
+  int err = 0;
+
+  if(!name || !*name || !path) {
+    return -1;
+  }
+
+  path[0] = 0;
+  if(name[0] == '/') {
+    if(!(err=__syscall(SYS_stat, name, buf))) {
+      strcpy(path, name);
+    }
+    return err;
+  }
 
   sprintf(path, "/system/priv/lib/%s", name);
   if(!__syscall(SYS_stat, path, buf)) {
@@ -162,273 +197,256 @@ sprx_find_file(const char *name, char* path) {
     return 0;
   }
 
-  return -1;
-}
-
-
-static void*
-sprx_dlsym(const char* symname) {
-  unsigned long addr;
-
-  // try with dlsym syscall first
-  if(!DYNLIB_DLSYM(g_libkernel_handle, symname, &addr)) {
-    return (void*)addr;
-  }
-
-  if(!DYNLIB_DLSYM(0x2, symname, &addr)) {
-    return (void*)addr;
-  }
-
-  for(int i=0; i<g_nb_handles; i++) {
-    if(!DYNLIB_DLSYM(g_handles[i], symname, &addr)) {
-      return (void*)addr;
-    }
-  }
-
-  // some symbols are blocked by the dlsym syscall, try resolving
-  // it by peeking at the symtab in kernel space
-  if((addr=kernel_dynlib_dlsym(-1, g_libkernel_handle, symname))) {
-    return (void*)addr;
-  }
-  if((addr=kernel_dynlib_dlsym(-1, 0x2, symname))) {
-    return (void*)addr;
-  }
-
-  for(int i=0; i<g_nb_handles; i++) {
-    if((addr=kernel_dynlib_dlsym(-1, g_handles[i], symname))) {
-      return (void*)addr;
-    }
-  }
-
-  return 0;
-}
-
-
-static unsigned int
-sprx_open(const char* libname) {
-  char path[1024];
-  int handle;
-  int error;
-
-  if(!strcmp(libname, "libkernel.sprx") ||
-     !strcmp(libname, "libkernel_web.sprx") ||
-     !strcmp(libname, "libkernel_sys.sprx")) {
-    return g_libkernel_handle;
-  }
-
-  if(!strcmp(libname, "libSceLibcInternal.sprx")) {
-    return 0x2;
-  }
-
-  if(sprx_find_file(libname, path)) {
-    klog_printf("%s: not found in the system library directories\n", libname);
-    return 0;
-  }
-
-  for(int i=0; i<sizeof(sysmodtab)/sizeof(sysmodtab[0]); i++) {
-    if(!strcmp(libname, sysmodtab[i].name)) {
-      if((error=sceSysmoduleLoadModuleInternal(sysmodtab[i].handle))) {
-	klog_printf("%s: sceSysmoduleLoadModuleInternal(0x%x) failed: 0x%x\n",
-		    libname, sysmodtab[i].handle, error);
-	return 0;
+  if((ldpaths=getenv("LD_LIBRARY_PATH"))) {
+    for(int i=0; ldpaths[i]; i++) {
+      path[off++] = ldpaths[i];
+      if(path[off] == ':' || ldpaths[i+1] == 0) {
+	path[off] = '/';
+	path[off+1] = 0;
+	strcat(path, name);
+	off = 0;
+	if(!__syscall(SYS_stat, path, buf)) {
+	  return 0;
+	}
       }
     }
   }
 
-  if((handle=sceKernelLoadStartModule(path, 0, 0, 0, 0, 0)) < 0) {
-    klog_printf("%s: sceKernelLoadStartModule failed: 0x%x\n", libname, handle);
-  }
-
-  return handle;
-}
-
-
-/**
- * Process the DT_NEEDED entry in the .dynamic section.
- **/
-static int
-rtld_dt_needed(const char* libname) {
-  unsigned int handle;
-  
-  if((handle=sprx_open(libname))) {
-    g_handles[g_nb_handles++] = handle;
+  sprintf(path, "/user/homebrew/lib/%s", name);
+  if(!__syscall(SYS_stat, path, buf)) {
     return 0;
   }
 
-  klog_libload_error(libname);
+  if(! __syscall(SYS___getcwd, cwd, sizeof(cwd))) {
+    sprintf(path, "%s/%s", cwd, name);
+    if(!__syscall(SYS_stat, path, buf)) {
+      return 0;
+    }
+  }
+
+  path[0] = 0;
   return -1;
 }
 
 
-/**
- * Process the R_X86_64_GLOB_DAT relocation type.
- **/
-static int
-rtld_r_glob_dat(unsigned char* img, Elf64_Sym* symtab, char* strtab, Elf64_Rela* rela) {
-  Elf64_Sym* sym = symtab + ELF64_R_SYM(rela->r_info);
-  const char* name = strtab + sym->st_name;
-  void* loc = img + rela->r_offset;
-  void* val = 0;
+rtld_lib_t*
+__rtld_lib_new(rtld_lib_t* parent, const char* soname) {
+  rtld_lib_t* root = parent;
+  rtld_ref_lib_t* lib = 0;
+  rtld_lib_t* ref = 0;
+  char path[1024];
 
-  if((val=sprx_dlsym(name))) {
-    memcpy(loc, &val, sizeof(val));
-    return 0;
+  // find the root node
+  while(root && root->parent) {
+    root = root->parent;
   }
 
-  // ignore unresolved weak symbols
-  if(ELF64_ST_BIND(sym->st_info) == STB_WEAK) {
-    return 0;
+  if(__rtld_find_file(soname, path)) {
+    strcpy(path, soname);
   }
 
-  klog_printf("Unable to resolve '%s'\n", name);
+  // check if the lib is already loaded
+  if((ref=__rtld_lib_soname2lib(root, path))) {
+    lib = calloc(1, sizeof(rtld_ref_lib_t));
+    lib->parent   = parent;
+    lib->ref      = ref;
+    lib->open     = ref_open;
+    lib->init     = ref_init;
+    lib->sym2addr = ref_sym2addr;
+    lib->addr2sym = ref_addr2sym;
+    lib->fini     = ref_fini;
+    lib->close    = ref_close;
+    lib->destroy  = ref_destroy;
+    lib->refcnt   = 0;
+    lib->mapbase  = ref->mapbase;
+    lib->mapsize  = ref->mapsize;
 
-  return -1;
+    strcpy(lib->soname, ref->soname);
+
+    return (rtld_lib_t*)lib;
+  }
+
+  // .sprx and .so files have different loaders
+  if(endswith(soname, ".sprx")) {
+    return __rtld_sprx_new(parent, soname);
+  } else {
+    return __rtld_so_new(parent, soname);
+  }
 }
 
 
-/**
- * Process the R_X86_64_JMP_SLOT relocation type.
- **/
-static int
-rtld_r_jmp_slot(unsigned char* img, Elf64_Sym* symtab, char* strtab, Elf64_Rela* rela) {
-  return rtld_r_glob_dat(img, symtab, strtab, rela);
-}
-
-
-/**
- * Process the R_X86_64_64 relocation type.
- **/
-static int
-rtld_r_direct_64(unsigned char* img, Elf64_Sym* symtab, char* strtab, Elf64_Rela* rela) {
-  Elf64_Sym* sym = symtab + ELF64_R_SYM(rela->r_info);
-  const char* name = strtab + sym->st_name;
-  void* loc = img + rela->r_offset;
-  void* val = 0;
-
-  if((val=sprx_dlsym(name))) {
-    val += rela->r_addend;
-    memcpy(loc, &val, sizeof(val));
-    return 0;
+int
+__rtld_lib_open(rtld_lib_t* ctx) {
+  if(!ctx) {
+    return -1;
   }
 
-  // ignore unresolved weak symbols
-  if(ELF64_ST_BIND(sym->st_info) == STB_WEAK) {
-    return 0;
+  ctx->refcnt++;
+  if(ctx->refcnt == 1) {
+    return ctx->open(ctx);
   }
-
-  klog_printf("Unable to resolve '%s'\n", name);
-
-  return -1;
-}
-
-
-/**
- * Process the R_X86_64_RELATIVE relocation type.
- **/
-static int
-rtld_r_relative(unsigned char* img, Elf64_Rela* rela) {
-  unsigned long* loc = (unsigned long*)(img + rela->r_offset);
-  unsigned long val = (unsigned long)(img + rela->r_addend);
-
-  memcpy(loc, &val, sizeof(val));
 
   return 0;
 }
 
 
-/**
- *
- **/
-static int
-rtld_load(unsigned char* image_start, Elf64_Dyn* dyn) {
-  unsigned long relasz = 0;
-  unsigned long pltsz = 0;
-  Elf64_Sym* symtab = 0;
-  Elf64_Rela* rela = 0;
-  Elf64_Rela* plt = 0;
-  char* strtab = 0;
+int
+__rtld_lib_append_dep(rtld_lib_t* ctx, rtld_lib_t* lib) {
+  rtld_lib_seq_t* seq;
+
+  if(!ctx || !lib) {
+    return -1;
+  }
+
+  if(!(seq=calloc(1, sizeof(rtld_lib_seq_t)))) {
+    return -1;
+  }
+
+  seq->lib = lib;
+
+  if(!ctx->children.head) {
+    ctx->children.head = seq;
+  }
+
+  if(!ctx->children.tail) {
+    ctx->children.tail = seq;
+  } else {
+    seq->prev = ctx->children.tail;
+    ctx->children.tail->next = seq;
+    ctx->children.tail = seq;
+  }
+
+  return 0;
+}
+
+
+int
+__rtld_lib_remove_dep(rtld_lib_t* ctx, rtld_lib_t* lib) {
+  if(!ctx || !lib) {
+    return -1;
+  }
+
+  for(rtld_lib_seq_t* it=ctx->children.head; it; it=it->next) {
+    if(it->lib != lib) {
+      continue;
+    }
+
+    if(it->prev) {
+      it->prev->next = it->next;
+    }
+    if(it->next) {
+      it->next->prev = it->prev;
+    }
+
+    free(it);
+
+    return 0;
+  }
+
+  return -1;
+}
+
+
+int
+__rtld_lib_init(rtld_lib_t* ctx, int argc, char** argv, char** envp) {
   int err;
 
-  // find lookup tables
-  for(int i=0; dyn[i].d_tag!=DT_NULL; i++) {
-    switch(dyn[i].d_tag) {
-    case DT_SYMTAB:
-      symtab = (Elf64_Sym*)(image_start + dyn[i].d_un.d_ptr);
-      break;
+  if(!ctx) {
+    return -1;
+  }
 
-    case DT_STRTAB:
-      strtab = (char*)(image_start + dyn[i].d_un.d_ptr);
-      break;
-
-    case DT_RELA:
-      rela = (Elf64_Rela*)(image_start + dyn[i].d_un.d_ptr);
-      break;
-
-    case DT_RELASZ:
-      relasz = dyn[i].d_un.d_val;
-      break;
-
-    case DT_JMPREL:
-      plt = (Elf64_Rela*)(image_start + _DYNAMIC[i].d_un.d_ptr);
-      break;
-
-    case DT_PLTRELSZ:
-      pltsz = _DYNAMIC[i].d_un.d_val;
-      break;
+  // init in reverse order
+  for(rtld_lib_seq_t* it=ctx->children.tail; it; it=it->prev) {
+    if((err=__rtld_lib_init(it->lib, argc, argv, envp))) {
+      return err;
     }
   }
 
-  // load needed libraries
-  for(int i=0; dyn[i].d_tag!=DT_NULL; i++) {
-    switch(dyn[i].d_tag) {
-    case DT_NEEDED:
-      if((err=rtld_dt_needed(strtab + dyn[i].d_un.d_val))) {
-	return err;
-      }
-      break;
+  return ctx->init(ctx, argc, argv, envp);
+}
+
+
+rtld_lib_t*
+__rtld_lib_sym2lib(rtld_lib_t* ctx, const char* name) {
+  rtld_lib_t* lib;
+
+  if(!ctx || !name) {
+    return 0;
+  }
+
+  if(ctx->sym2addr(ctx, name)) {
+    return ctx;
+  }
+
+  // TODO: breadth-first search
+  for(rtld_lib_seq_t* it=ctx->children.head; it; it=it->next) {
+      if((lib=__rtld_lib_sym2lib(it->lib, name))) {
+      return lib;
     }
   }
 
-  // apply relocations
-  for(int i=0; i<relasz/sizeof(Elf64_Rela); i++) {
-    switch(rela[i].r_info & 0xffffffffl) {
-    case R_X86_64_JMP_SLOT:
-      if((err=rtld_r_jmp_slot(image_start, symtab, strtab, &rela[i]))) {
-	return err;
-      }
-      break;
+  return 0;
+}
 
-    case R_X86_64_64:
-      if((err=rtld_r_direct_64(image_start, symtab, strtab, &rela[i]))) {
-	return err;
-      }
-      break;
 
-    case R_X86_64_GLOB_DAT:
-      if((err=rtld_r_glob_dat(image_start, symtab, strtab, &rela[i]))) {
-	return err;
-      }
-      break;
+rtld_lib_t*
+__rtld_lib_addr2lib(rtld_lib_t* ctx, void* addr) {
+  rtld_lib_t* lib;
 
-    case R_X86_64_RELATIVE:
-      if((err=rtld_r_relative(image_start, &rela[i]))) {
-	return err;
-      }
-      break;
+  if(!ctx || !addr) {
+    return 0;
+  }
+
+  if(addr >= ctx->mapbase &&
+     addr < ctx->mapbase + ctx->mapsize) {
+      return ctx;
+    }
+
+  for(rtld_lib_seq_t* it=ctx->children.head; it; it=it->next) {
+      if((lib=__rtld_lib_addr2lib(it->lib, addr))) {
+      return lib;
     }
   }
 
-  for(int i=0; i<pltsz/sizeof(Elf64_Rela); i++) {
-    switch(plt[i].r_info & 0xffffffffl) {
-    case R_X86_64_JMP_SLOT:
-      if((err=rtld_r_jmp_slot(image_start, symtab, strtab, &plt[i]))) {
-	return err;
-      }
-      break;
+  return 0;
+}
 
-    default:
-      klog_printf("Unsupported plt type %x\n", plt[i].r_info);
-      break;
+
+void*
+__rtld_lib_sym2addr(rtld_lib_t* ctx, const char* name) {
+  if(ctx && name) {
+    return ctx->sym2addr(ctx, name);
+  } else {
+    return 0;
+  }
+}
+
+
+const char*
+__rtld_lib_addr2sym(rtld_lib_t* ctx, void* addr) {
+  if(ctx && addr) {
+    return ctx->addr2sym(ctx, addr);
+  } else {
+    return 0;
+  }
+}
+
+
+int
+__rtld_lib_fini(rtld_lib_t* ctx) {
+  int err;
+
+  if(!ctx) {
+    return -1;
+  }
+
+  if((err=ctx->fini(ctx))) {
+    return err;
+  }
+
+  for(rtld_lib_seq_t* it=ctx->children.head; it; it=it->next) {
+    if((err=__rtld_lib_fini(it->lib))) {
+      return err;
     }
   }
 
@@ -437,88 +455,137 @@ rtld_load(unsigned char* image_start, Elf64_Dyn* dyn) {
 
 
 int
-__rtld_init(void) {
-  unsigned int libSceSysmodule;
-  unsigned long jaildir;
-  unsigned long rootdir;
-  unsigned long prison;
-  int err = 0;
-  long l;
+__rtld_lib_close(rtld_lib_t* ctx) {
+  int err;
 
-  if(!DYNLIB_DLSYM(0x1, "getpid", &l)) {
-    g_libkernel_handle = 0x1;
-  } else if(!DYNLIB_DLSYM(0x2001, "getpid", &l)) {
-    g_libkernel_handle = 0x2001;
-  } else {
-    klog_puts("unable to determine libkernel handle");
+  if(!ctx) {
     return -1;
   }
-  if((err=DYNLIB_DLSYM(g_libkernel_handle, "sceKernelLoadStartModule",
-		       &sceKernelLoadStartModule))) {
-    klog_resolve_error("sceKernelLoadStartModule");
+
+  ctx->refcnt--;
+  if(ctx->refcnt > 0) {
+    return 0;
+  }
+
+  for(rtld_lib_seq_t* it=ctx->children.tail; it; it=it->prev) {
+    if((err=__rtld_lib_close(it->lib))) {
+      return err;
+    }
+  }
+
+  if((err=ctx->close(ctx))) {
     return err;
   }
 
-  if((err=DYNLIB_DLSYM(0x2, "memcpy", &memcpy))) {
-    klog_resolve_error("memcpy");
+  if(ctx->parent) {
+    return __rtld_lib_remove_dep(ctx->parent, ctx);
+  } else {
+    return 0;
+  }
+}
+
+
+void
+__rtld_lib_destroy(rtld_lib_t* ctx) {
+  if(ctx) {
+    ctx->destroy(ctx);
+  }
+}
+
+
+int
+__rtld_init(void) {
+  int err;
+
+  if(!RTLD_DLSYM(0x2, strcpy)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, strcat)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, strcmp)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, strncmp)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, strlen)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, sprintf)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, calloc)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, free)) {
+    return -1;
+  }
+  if(!RTLD_DLSYM(0x2, getenv)) {
+    return -1;
+  }
+
+  if((err=__rtld_sprx_init())) {
     return err;
   }
-  if((err=DYNLIB_DLSYM(0x2, "strcmp", &strcmp))) {
-    klog_resolve_error("strcmp");
+  if((err=__rtld_so_init())) {
     return err;
   }
-  if((err=DYNLIB_DLSYM(0x2, "sprintf", &sprintf))) {
-    klog_resolve_error("sprintf");
+  if((err=__rtld_payload_init())) {
+    return err;
+  }
+  if((err=__rtld_dlfcn_init())) {
     return err;
   }
 
-  if(!(prison=kernel_get_ucred_prison(-1))) {
+  return 0;
+}
+
+
+
+int
+__rtld_sandbox_leave(rtld_sandbox_t* state) {
+  int err;
+
+  if(!(state->prison=kernel_get_ucred_prison(-1))) {
     klog_puts("kernel_get_ucred_prison failed");
     return -1;
   }
-  if(!(rootdir=kernel_get_proc_rootdir(-1))) {
+  if(!(state->rootdir=kernel_get_proc_rootdir(-1))) {
     klog_puts("kernel_get_proc_rootdir failed");
     return -1;
   }
-  if(!(jaildir=kernel_get_proc_jaildir(-1))) {
+  if(!(state->jaildir=kernel_get_proc_jaildir(-1))) {
     klog_puts("kernel_get_proc_jaildir failed");
     return -1;
   }
 
   if((err=kernel_set_proc_rootdir(-1, KERNEL_ADDRESS_ROOTVNODE))) {
     klog_puts("kernel_set_proc_rootdir failed");
-
   } else if((err=kernel_set_proc_jaildir(-1, KERNEL_ADDRESS_ROOTVNODE))) {
     klog_puts("kernel_set_proc_jaildir failed");
-
   } else if((err=kernel_set_ucred_prison(-1, KERNEL_ADDRESS_PRISON0))) {
-    klog_puts("kernel_set_proc_rootdir failed");
+    klog_puts("kernel_set_ucred_prison failed");
   }
 
-  if(DYNLIB_LOAD("/system/common/lib/libSceSysmodule.sprx", &libSceSysmodule)) {
-    klog_libload_error("/system/common/lib/libSceSysmodule.sprx");
-    return -1;
-  }
-  if(DYNLIB_DLSYM(libSceSysmodule, "sceSysmoduleLoadModuleInternal",
-		   &sceSysmoduleLoadModuleInternal)) {
-    klog_resolve_error("sceSysmoduleLoadModuleInternal");
-    return -1;
-  }
+  return err;
+}
 
-  if(!err) {
-    err = rtld_load(__image_start, _DYNAMIC);
-  }
 
-  if(kernel_set_proc_rootdir(-1, rootdir)) {
+int
+__rtld_sandbox_restore(rtld_sandbox_t* state) {
+  int err = 0;
+
+  if(kernel_set_proc_rootdir(-1, state->rootdir)) {
     klog_puts("kernel_set_proc_rootdir failed");
     err = -1;
   }
-  if(kernel_set_proc_jaildir(-1, jaildir)) {
+  if(kernel_set_proc_jaildir(-1, state->jaildir)) {
     klog_puts("kernel_set_proc_jaildir failed");
     err = -1;
   }
-  if(kernel_set_ucred_prison(-1, prison)) {
-    klog_puts("kernel_set_proc_rootdir failed");
+  if(kernel_set_ucred_prison(-1, state->prison)) {
+    klog_puts("kernel_set_ucred_prison failed");
     err = -1;
   }
 
