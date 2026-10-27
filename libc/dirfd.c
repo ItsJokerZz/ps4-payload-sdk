@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 John Törnblom
+/* Copyright (C) 2024 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -14,14 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
-#include <string.h>
-#include <strings.h>
+
+#include <dirent.h>
 
 
 /**
- * The C locale is the only one there is, so the locale is ignored.
+ * file descriptor is the first field of the DIR struct.
  **/
 int
-strcasecmp_l(const char *l, const char *r, locale_t loc) {
-  return strcasecmp(l, r);
+dirfd(DIR *dirp) {
+  return *(int*)dirp;
 }
+
