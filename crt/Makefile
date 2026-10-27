@@ -22,12 +22,30 @@ CFLAGS += -fvisibility-nodllstorageclass=default -Wall -Werror
 CFLAGS += -fms-extensions -Wno-microsoft-anon-tag
 CFLAGS += -O1
 
-OBJ := crt.o syscall.o klog.o kernel.o rtld.o rtld_so.o rtld_sprx.o rtld_payload.o \
-       rtld_dlfcn.o patch.o mdbg.o nid.o _start.o
+OBJ := crt.o syscall.o klog.o nid.o kernel.o rtld.o rtld_so.o rtld_sprx.o \
+       rtld_payload.o rtld_dlfcn.o mdbg.o patch.o _start.o
 
 .PHONY: all clean install
 
-all: crt1.o
+all: crt1.o crti.o crtn.o crtbegin.o crtend.o crtbeginS.o crtendS.o
+
+crtbeginS.o:
+	$(AR) -rsc $@
+
+crtendS.o:
+	$(AR) -rsc $@
+
+crtbegin.o:
+	$(AR) -rsc $@
+
+crtend.o:
+	$(AR) -rsc $@
+
+crti.o:
+	$(AR) -rsc $@
+
+crtn.o:
+	$(AR) -rsc $@
 
 crt1.o: $(OBJ)
 	$(LD) -m elf_x86_64 -r --wrap=__crt_start -o $@ $^
@@ -41,6 +59,6 @@ crt1.o: $(OBJ)
 clean:
 	rm -f *.o *.a
 
-install: crt1.o
+install: crt1.o crti.o crtn.o crtbegin.o crtend.o crtbeginS.o crtendS.o
 	install -d $(DESTDIR)/target/lib
 	install $^ $(DESTDIR)/target/lib
