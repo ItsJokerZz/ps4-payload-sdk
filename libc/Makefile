@@ -16,7 +16,7 @@
 
 include ../Makefile.inc
 
-CFLAGS := -target x86_64-scie-ps4 -fPIC  -fno-plt -fno-stack-protector
+CFLAGS := -target x86_64-scei-ps4 -fPIC  -fno-plt -fno-stack-protector
 CFLAGS += -nobuiltininc -isystem ../include/freebsd-9.3 -isystem ../include
 CFLAGS += -fvisibility-nodllstorageclass=default
 CFLAGS += -O1

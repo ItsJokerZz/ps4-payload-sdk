@@ -52,7 +52,7 @@ set PATH=%PATH%;%PS4_PAYLOAD_SDK%\win
 
 clang ^
     --start-no-unused-arguments ^
-    -target x86_64-scie-ps4 ^
+    -target x86_64-scei-ps4 ^
     -isysroot "%PS4_PAYLOAD_SDK%" ^
     -isystem "%PS4_PAYLOAD_SDK%\target\include" ^
     -L "%PS4_PAYLOAD_SDK%\target\lib" ^
