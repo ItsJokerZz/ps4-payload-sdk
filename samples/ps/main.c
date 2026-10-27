@@ -20,6 +20,7 @@ along with this program; see the file COPYING. If not, see
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ps4/kernel.h>
 
 
 #define MiB(x) ((x) / (1024.0 * 1024))
@@ -68,7 +69,7 @@ main() {
   }
 
   printf("     PID      PPID     PGID      SID      UID"
-         "      State      AppId    TitleId     Memory (MiB)  Command\n");
+         "           AuthId      State      AppId    TitleId     Memory (MiB)  Command\n");
   for(void *ptr=buf; ptr<(buf+buf_size);) {
     struct kinfo_proc *ki = (struct kinfo_proc*)ptr;
     ptr += ki->ki_structsize;
@@ -77,9 +78,10 @@ main() {
       memset(&appinfo, 0, sizeof(appinfo));
     }
 
-    printf("%8u  %8u %8u %8u %8u %10s   %08x  %9s  %6.1f / %6.1f  %s\n",
+    printf("%8u  %8u %8u %8u %8u %016lx %10s   %08x  %9s  %6.1f / %6.1f  %s\n",
 	   ki->ki_pid, ki->ki_ppid, ki->ki_pgid, ki->ki_sid,
-	   ki->ki_uid, state_abbrev[(int)ki->ki_stat], appinfo.app_id,
+	   ki->ki_uid, kernel_get_ucred_authid(ki->ki_pid),
+           state_abbrev[(int)ki->ki_stat], appinfo.app_id,
 	   appinfo.title_id, MiB(ki->ki_rssize * PAGE_SIZE),
            MiB(ki->ki_size), ki->ki_comm);
   }
