@@ -55,6 +55,10 @@ __FBSDID("$FreeBSD$");
 #include <ufs/ffs/ffs_extern.h>
 #include <ufs/ffs/fs.h>
 
+#ifdef KDB
+void	ffs_checkoverlap(struct buf *, struct inode *);
+#endif
+
 /*
  * Return buffer with the contents of block "offset" from the beginning of
  * directory "ip".  If "res" is non-zero, fill it in with a pointer to the
@@ -74,7 +78,7 @@ ffs_blkatoff(vp, offset, res, bpp)
 	int bsize, error;
 
 	ip = VTOI(vp);
-	fs = ITOFS(ip);
+	fs = ip->i_fs;
 	lbn = lblkno(fs, offset);
 	bsize = blksize(fs, ip, lbn);
 
@@ -102,7 +106,7 @@ ffs_load_inode(bp, ip, fs, ino)
 	ino_t ino;
 {
 
-	if (I_IS_UFS1(ip)) {
+	if (ip->i_ump->um_fstype == UFS1) {
 		*ip->i_din1 =
 		    *((struct ufs1_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
 		ip->i_mode = ip->i_din1->di_mode;
@@ -160,6 +164,37 @@ ffs_fragacct(fs, fragmap, fraglist, cnt)
 		}
 	}
 }
+
+#ifdef KDB
+void
+ffs_checkoverlap(bp, ip)
+	struct buf *bp;
+	struct inode *ip;
+{
+	struct buf *ebp, *ep;
+	ufs2_daddr_t start, last;
+	struct vnode *vp;
+
+	ebp = &buf[nbuf];
+	start = bp->b_blkno;
+	last = start + btodb(bp->b_bcount) - 1;
+	for (ep = buf; ep < ebp; ep++) {
+		if (ep == bp || (ep->b_flags & B_INVAL) ||
+		    ep->b_vp == NULLVP)
+			continue;
+		vp = ip->i_devvp;
+		/* look for overlap */
+		if (ep->b_bcount == 0 || ep->b_blkno > last ||
+		    ep->b_blkno + btodb(ep->b_bcount) <= start)
+			continue;
+		vprint("Disk overlap", vp);
+		printf("\tstart %jd, end %jd overlap start %jd, end %jd\n",
+		    (intmax_t)start, (intmax_t)last, (intmax_t)ep->b_blkno,
+		    (intmax_t)(ep->b_blkno + btodb(ep->b_bcount) - 1));
+		panic("ffs_checkoverlap: Disk buffer overlap");
+	}
+}
+#endif /* KDB */
 
 /*
  * block operations
