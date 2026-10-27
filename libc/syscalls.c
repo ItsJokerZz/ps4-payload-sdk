@@ -2332,7 +2332,7 @@ jail_remove() {
 }
 
 void
-semctl() {
+__semctl() {
   asm(".intel_syntax noprefix\n"
     "  sub rsp, 8\n"
     "  mov r9, r8\n"
@@ -2341,6 +2341,24 @@ semctl() {
     "  mov rdx, rsi\n"
     "  mov rsi, rdi\n"
     "  mov edi, 510\n"
+    "  xor eax, eax\n"
+    "  call syscall\n"
+    "  add rsp, 8\n"
+    "  mov rdi, rax\n"
+    "  jmp __syscall_ret\n"
+    );
+}
+
+void
+freebsd7___semctl() {
+  asm(".intel_syntax noprefix\n"
+    "  sub rsp, 8\n"
+    "  mov r9, r8\n"
+    "  mov r8, rcx\n"
+    "  mov rcx, rdx\n"
+    "  mov rdx, rsi\n"
+    "  mov rsi, rdi\n"
+    "  mov edi, 220\n"
     "  xor eax, eax\n"
     "  call syscall\n"
     "  add rsp, 8\n"
