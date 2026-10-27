@@ -128,6 +128,9 @@ unsigned long KERNEL_ADDRESS_TARGETID   = 0;
 unsigned long KERNEL_ADDRESS_QA_FLAGS   = 0;
 unsigned long KERNEL_ADDRESS_COPYIN     = 0;
 unsigned long KERNEL_ADDRESS_COPYOUT    = 0;
+unsigned long KERNEL_ADDRESS_DMAP_BASE   = 0;
+
+unsigned long KERNEL_OFFSET_VMSPACE_VM_PMAP = 0;
 
 const unsigned long KERNEL_OFFSET_PROC_P_UCRED   = 0x40;
 const unsigned long KERNEL_OFFSET_PROC_P_FD      = 0x48;
@@ -1018,6 +1021,10 @@ __kernel_init(payload_args_t* args) {
     break;
   }
 
+  if(fw <= 0x14000000) {
+    KERNEL_OFFSET_VMSPACE_VM_PMAP = 0x1c8;
+  }
+
   // get the size of the kernel image
   if((err=kexec(kexec_get_image_size, KERNEL_ADDRESS_IMAGE_BASE,
 		&KERNEL_IMAGE_SIZE))) {
@@ -1055,6 +1062,22 @@ __kernel_init(payload_args_t* args) {
   // ensure we found 'allproc'
   if(!(KERNEL_ADDRESS_ALLPROC=addr)) {
     return -1;
+  }
+
+  if(KERNEL_OFFSET_VMSPACE_VM_PMAP) {
+    unsigned long proc = kernel_get_proc(0);
+    unsigned long vmspace = 0;
+    unsigned long pml4u = 0;
+    unsigned long cr3 = 0;
+
+    if(proc &&
+       !kernel_copyout(proc + KERNEL_OFFSET_PROC_P_VMSPACE, &vmspace, sizeof(vmspace)) &&
+       vmspace &&
+       !kernel_copyout(vmspace + KERNEL_OFFSET_VMSPACE_VM_PMAP + 0x20, &pml4u, sizeof(pml4u)) &&
+       !kernel_copyout(vmspace + KERNEL_OFFSET_VMSPACE_VM_PMAP + 0x28, &cr3, sizeof(cr3)) &&
+       pml4u && cr3) {
+      KERNEL_ADDRESS_DMAP_BASE = pml4u - cr3;
+    }
   }
 
   // get the address pointing at the global kernel variable 'prison0'
@@ -1158,7 +1181,7 @@ kernel_getchar(unsigned long addr) {
 
 
 unsigned long
-kernel_find_pattern(unsigned long addr, unsigned int len, const char* pattern) {
+kernel_find_pattern_kexec(unsigned long addr, unsigned int len, const char* pattern) {
   kexec_find_pattern_ctx_t ctx;
   unsigned long res = 0;
   int pattern_len = -1;
@@ -1193,7 +1216,7 @@ kernel_find_pattern(unsigned long addr, unsigned int len, const char* pattern) {
 
 
 int
-kernel_patch(unsigned long addr, const void* before, const void* after,
+kernel_patch_kexec(unsigned long addr, const void* before, const void* after,
 	     unsigned short size) {
   unsigned char current[size];
 
