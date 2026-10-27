@@ -17,6 +17,10 @@ along with this program; see the file COPYING. If not, see
 #pragma once
 
 
+#define KERNEL_DLSYM(handle, sym) \
+    (sym=(void*)kernel_dynlib_dlsym(-1, handle, #sym))
+
+
 /**
  * dynamic library loaded in kernel memory.
  **/
@@ -161,6 +165,8 @@ int           kernel_set_proc_jaildir(int pid, unsigned long vnode);
 unsigned long kernel_get_proc_currdir(int pid);
 int           kernel_set_proc_currdir(int pid, unsigned long vnode);
 
+int kernel_dynlib_obj(int pid, unsigned int handle, dynlib_obj_t* obj);
+int kernel_dynlib_handle(int pid, const char* basename, unsigned int *handle);
 unsigned long kernel_dynlib_dlsym(int pid, unsigned int handle, const char *sym);
 
 unsigned long kernel_find_pattern(unsigned long addr, unsigned int len,
