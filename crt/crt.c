@@ -254,10 +254,10 @@ payload_init(void) {
   int *__isthreaded = 0;
   int err = 0;
 
-  if((err=__klog_init())) {
+  if((err=__kernel_init())) {
     return err;
   }
-  if((err=__kernel_init())) {
+  if((err=__klog_init())) {
     return err;
   }
 
