@@ -113,7 +113,7 @@ static struct sysmodtab {
 } sysmodtab[] = {
   {"libSceAppInstUtil.sprx", 0x80000014},
   {"libSceNet.sprx", 0x8000001c},
-  {"libSceHttp2.sprx", 0x8000008c},
+  {"libSceHttp.sprx", 0x8000000a},
   {"libSceSsl.sprx", 0x8000000b},
   {"libSceSystemService.sprx", 0x80000010},
   {"libSceUserService.sprx", 0x80000011},
