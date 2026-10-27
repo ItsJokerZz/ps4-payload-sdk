@@ -25,6 +25,7 @@ quotactl(const char* path, int cmd, int id, void* addr) {
 
   if((err=syscall(SYS_quotactl, path, cmd, id, addr))) {
     errno = -err;
+    return -1;
   }
 
   return 0;
