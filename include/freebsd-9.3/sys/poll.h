@@ -95,8 +95,19 @@ struct pollfd {
 
 #ifndef _KERNEL
 
+#if __BSD_VISIBLE
+#include <sys/_types.h>
+#include <sys/_sigset.h>
+#include <sys/_timespec.h>
+#endif
+
 __BEGIN_DECLS
 int	poll(struct pollfd _pfd[], nfds_t _nfds, int _timeout);
+#if __BSD_VISIBLE
+int	ppoll(struct pollfd _pfd[], nfds_t _nfds,
+	    const struct timespec *__restrict _timeout,
+	    const __sigset_t *__restrict _newsigmask);
+#endif
 __END_DECLS
 
 #endif /* !_KERNEL */
