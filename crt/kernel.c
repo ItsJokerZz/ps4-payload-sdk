@@ -2056,7 +2056,7 @@ kernel_get_vmem_entry(int pid, unsigned long addr) {
     }
   }
 
-  return EFAULT;
+  return 0;
 }
 
 int
@@ -2111,7 +2111,7 @@ kernel_set_vmem_protection(int pid, unsigned long addr, unsigned long len, int p
   unsigned char vm_prot = prot;
   unsigned long vm_entry;
   unsigned long start;
-  int first = 0;
+  int first = 1;
 
   if(prot < 0) {
     return EINVAL;
